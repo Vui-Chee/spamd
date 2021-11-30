@@ -5,8 +5,9 @@ import (
 	"log"
 	"os"
 
-	"github.com/gomarkdown/markdown"
-	"github.com/gomarkdown/markdown/parser"
+	"bytes"
+
+	"github.com/yuin/goldmark"
 )
 
 // TODO
@@ -18,10 +19,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	extensions := parser.CommonExtensions | parser.AutoHeadingIDs
-	parser := parser.NewWithExtensions(extensions)
+	var buf bytes.Buffer
+	if err := goldmark.Convert(dat, &buf); err != nil {
+		panic(err)
+	}
 
-	html := string(markdown.ToHTML(dat, parser, nil))
-
-	fmt.Println(html)
+	fmt.Println(buf.String())
 }

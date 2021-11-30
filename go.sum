@@ -1,7 +1,2 @@
-github.com/gomarkdown/markdown v0.0.0-20180831092322-0465c5af6a9b/go.mod h1:gmFANS06wAVmF0B9yi65QKsRmPQ97tze7FRLswua+OY=
-github.com/gomarkdown/markdown v0.0.0-20211128002848-ab7d7bf476b3 h1:TyhCPRkxLfBBOuOy8oambova4pG4Iivc0lTdTrkhN98=
-github.com/gomarkdown/markdown v0.0.0-20211128002848-ab7d7bf476b3/go.mod h1:JDGcbDT52eL4fju3sZ4TeHGsQwhG9nbDV21aMyhwPoA=
-github.com/pkg/errors v0.8.0/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
-github.com/romanyx/mdopen v1.1.2/go.mod h1:sD+Xh9mXLKwxtROGavyfpCQ767VXoENSW7nHNBdS4As=
-github.com/tink-ab/tempfile v0.0.0-20180226111222-33beb0518f1a/go.mod h1:Wt5qSdcHgX6XkqZKAZTxnN+93jnqtx0jEgTQakpZ1CE=
-gopkg.in/urfave/cli.v1 v1.20.0/go.mod h1:vuBzUtMdQeixQj8LVd+/98pzhxNGQoyuPBlsXHOQNO0=
+github.com/yuin/goldmark v1.4.4 h1:zNWRjYUW32G9KirMXYHQHVNFkXvMI7LpgNW2AgYAoIs=
+github.com/yuin/goldmark v1.4.4/go.mod h1:rmuwmfZ0+bvzB24eSC//bk1R1Zp3hM0OXYv/G2LIilg=
