@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Testing SSE in Golang</title>
+    <title>mdpreview</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" href="/styles" />
     <style>
@@ -34,7 +34,7 @@
       });
     }
 
-    //// On first run, fetch to get contents.
+    // On first run, fetch to get contents.
     fetch("/content").then((res) => {
       res.json().then(({ content }) => {
         let contentDiv = document.querySelector(".markdown-body");
