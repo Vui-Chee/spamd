@@ -14,8 +14,7 @@ type Args struct {
 // Middleware to inject commandline args into request context.
 type ArgsInjector struct {
 	handler http.Handler
-
-	args Args
+	args    Args
 }
 
 func (l *ArgsInjector) ServeHTTP(w http.ResponseWriter, r *http.Request) {
