@@ -8,7 +8,8 @@ import (
 	"time"
 )
 
-//go:embed frontend
+//go:embed frontend/node_modules/github-markdown-css/github-markdown.css
+//go:embed frontend/index.html
 var f embed.FS
 
 func exitOnError(msg string) {
