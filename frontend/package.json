@@ -1,0 +1,9 @@
+{
+  "devDependencies": {
+    "prettier": "^2.5.0"
+  },
+  "dependencies": {
+    "github-markdown-css": "^5.0.0"
+  }
+}
+

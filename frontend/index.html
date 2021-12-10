@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Testing SSE in Golang</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/styles" />
+    <style>
+      .markdown-body {
+        box-sizing: border-box;
+        min-width: 200px;
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 45px;
+      }
+
+      @media (max-width: 767px) {
+        .markdown-body {
+          padding: 15px;
+        }
+      }
+    </style>
+  </head>
+
+  <script type="text/javascript">
+    function removeBulletPointsFromTaskListItem() {
+      // Remove bullet points from task list items.
+      // Each task item will have a checkbox type attribute.
+      const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+      checkboxes.forEach((checkbox) => {
+        checkbox.parentNode.style =
+          // Also shift left. Caused by <ul> padding css.
+          "list-style-type: none; margin-left: -25px;";
+      });
+    }
+
+    //// On first run, fetch to get contents.
+    fetch("/content").then((res) => {
+      res.json().then(({ content }) => {
+        let contentDiv = document.querySelector(".markdown-body");
+        contentDiv.innerHTML = content;
+
+        removeBulletPointsFromTaskListItem();
+      });
+    });
+  </script>
+
+  <body>
+    <article class="markdown-body"></article>
+  </body>
+</html>
