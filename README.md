@@ -2,4 +2,4 @@
 
 This is an introduction to building a markdown renderer server in Go.
 
-[link](www.google.com)
+[link](http://www.google.com)
