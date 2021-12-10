@@ -34,6 +34,16 @@
       });
     }
 
+    // Listen to server events using `EventSource`.
+    let eventListener = new EventSource("/refresh");
+    eventListener.onmessage = (event) => {
+      let { data } = event;
+      let contentDiv = document.querySelector(".markdown-body");
+      contentDiv.innerHTML = data;
+
+      removeBulletPointsFromTaskListItem();
+    };
+
     // On first run, fetch to get contents.
     fetch("/content").then((res) => {
       res.json().then(({ content }) => {

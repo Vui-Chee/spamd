@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"time"
 
 	m "github.com/vui-chee/mdpreview/service/middleware"
 )
@@ -24,6 +25,7 @@ func Start(args m.Args) {
 	openbrowser(fmt.Sprintf("http://localhost:%d", port))
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("/refresh", refreshContent)
 	mux.HandleFunc("/content", currentPage)
 	mux.HandleFunc("/styles", serveCSS)
 	mux.HandleFunc("/", serveHTML)
@@ -35,7 +37,30 @@ func Start(args m.Args) {
 	log.Fatal(http.Serve(l, wrapper))
 }
 
-// TODO: create file watching service
-func Watch(filename string) {
-	fmt.Println("Watching: ", filename)
+func Watch(filepath string) {
+	go func() {
+		modtime, err := getFileModtime(filepath)
+		if err != nil {
+			log.Fatal(err)
+			return
+		}
+
+		for {
+			time.Sleep(300 * time.Millisecond) // 0.3s
+
+			newModtime, err := getFileModtime(filepath)
+			if err != nil {
+				log.Fatal(err)
+				continue
+			}
+
+			if modtime != newModtime {
+				fmt.Println("File was modified at: ", time.Now().Local())
+				modtime = newModtime
+				for messageChannel := range messageChannels {
+					messageChannel <- newModtime.String()
+				}
+			}
+		}
+	}()
 }
