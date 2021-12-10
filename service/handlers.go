@@ -11,9 +11,9 @@ type Message struct {
 }
 
 func currentPage(w http.ResponseWriter, r *http.Request) {
-	filename := r.Context().Value("filename").(string)
+	filepath := r.Context().Value("filepath").(string)
 
-	content, err := convertMarkdownToHTML(filename)
+	content, err := convertMarkdownToHTML(filepath)
 	if err != nil {
 		log.Fatalln(err)
 		return
@@ -26,11 +26,19 @@ func currentPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func serveCSS(w http.ResponseWriter, r *http.Request) {
+	githubMarkdownCSS, err := getEmbeddedBytes("frontend/node_modules/github-markdown-css/github-markdown.css")
+	if err != nil {
+		exitOnError(err.Error())
+	}
 	w.Header().Set("Content-Type", "text/css")
-	// w.Write(githubMarkdownCSS)
+	w.Write(githubMarkdownCSS)
 }
 
 func serveHTML(w http.ResponseWriter, r *http.Request) {
+	mainHTML, err := getEmbeddedBytes("frontend/index.html")
+	if err != nil {
+		exitOnError(err.Error())
+	}
 	w.Header().Set("Content-Type", "text/html")
-	// w.Write(mainHTML)
+	w.Write(mainHTML)
 }
