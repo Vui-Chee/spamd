@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>mdpreview</title>
+    <title>{{.Filename}}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" href="/styles" />
     <style>
@@ -22,9 +22,11 @@
         justify-content: space-between;
         border-bottom: 1px solid var(--color-container-border);
         height: 50px;
+        background-color: var(--color-title-bar-bg-color);
       }
 
-      .title-bar > h2 {
+      .title-bar > h3 {
+        font-size: 14px;
         margin: 0;
         line-height: 50px;
         margin-left: 8px;
@@ -117,7 +119,7 @@
   <body>
     <div class="container">
       <div class="title-bar">
-        <h2>Title</h2>
+        <h3>{{.Filename}}</h3>
 
         <!-- Toggle to change theme. -->
         <label class="switch">

@@ -2,12 +2,19 @@ package service
 
 import (
 	"encoding/json"
+	"html/template"
 	"log"
 	"net/http"
+	"path"
 )
 
 type Message struct {
 	Content string `json:"content"`
+}
+
+// To insert variables into `index.html`.
+type InsertHTML struct {
+	Filename string
 }
 
 // Need multiple channels for each connection, otherwise
@@ -43,8 +50,13 @@ func serveHTML(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		exitOnError(err.Error())
 	}
+	t := template.New("Main HTML template")
+	t, _ = t.Parse(string(mainHTML))
+	filepath := r.Context().Value("filepath").(string)
+	data := InsertHTML{Filename: path.Base(filepath)}
+
 	w.Header().Set("Content-Type", "text/html")
-	w.Write(mainHTML)
+	t.Execute(w, data)
 }
 
 func refreshContent(w http.ResponseWriter, r *http.Request) {
