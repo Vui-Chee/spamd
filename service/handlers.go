@@ -30,8 +30,7 @@ func currentPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func serveCSS(w http.ResponseWriter, r *http.Request) {
-	// NOTE: you need to run `npm install` first to get the stylesheets.
-	githubMarkdownCSS, err := getEmbeddedBytes("frontend/node_modules/github-markdown-css/github-markdown.css")
+	githubMarkdownCSS, err := getEmbeddedBytes("frontend/styles.css")
 	if err != nil {
 		exitOnError(err.Error())
 	}

@@ -6,6 +6,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" href="/styles" />
     <style>
+      body {
+        margin: 0;
+      }
+
+      .container {
+        max-width: 980px;
+        margin: 0 auto;
+        border: 1px solid;
+        transition: color 0.2s ease-out, background 0.2s ease-out;
+      }
+
+      .title-bar {
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 1px solid;
+        height: 50px;
+      }
+
+      .title-bar > h2 {
+        margin: 0;
+        line-height: 50px;
+        margin-left: 8px;
+      }
+
+      article {
+        transition: color 0.2s ease-out, background 0.2s ease-out;
+      }
+
       .markdown-body {
         box-sizing: border-box;
         min-width: 200px;
@@ -19,8 +47,88 @@
           padding: 15px;
         }
       }
+
+      .switch {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 34px;
+
+        float: right;
+        margin-right: 8px;
+        margin-top: 8px;
+      }
+
+      .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+
+      .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        -webkit-transition: 0.4s;
+        transition: 0.4s;
+      }
+
+      .slider:before {
+        position: absolute;
+        content: "";
+        height: 26px;
+        width: 26px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        -webkit-transition: 0.4s;
+        transition: 0.4s;
+      }
+
+      input:checked + .slider {
+        background-color: #2196f3;
+      }
+
+      input:focus + .slider {
+        box-shadow: 0 0 1px #2196f3;
+      }
+
+      input:checked + .slider:before {
+        -webkit-transform: translateX(26px);
+        -ms-transform: translateX(26px);
+        transform: translateX(26px);
+      }
+
+      /* Rounded sliders */
+      .slider.round {
+        border-radius: 34px;
+      }
+
+      .slider.round:before {
+        border-radius: 50%;
+      }
     </style>
   </head>
+
+  <body>
+    <div class="container">
+      <div class="title-bar">
+        <h2>Title</h2>
+
+        <!-- Toggle to change theme. -->
+        <label class="switch">
+          <input class="theme-switch-input" type="checkbox" />
+          <span class="slider round"></span>
+        </label>
+      </div>
+
+      <article class="markdown-body"></article>
+    </div>
+  </body>
 
   <script type="text/javascript">
     function removeBulletPointsFromTaskListItem() {
@@ -28,9 +136,11 @@
       // Each task item will have a checkbox type attribute.
       const checkboxes = document.querySelectorAll('input[type="checkbox"]');
       checkboxes.forEach((checkbox) => {
-        checkbox.parentNode.style =
-          // Also shift left. Caused by <ul> padding css.
-          "list-style-type: none; margin-left: -25px;";
+        if (checkbox.classList.length === 0) {
+          checkbox.parentNode.style =
+            // Also shift left. Caused by <ul> padding css.
+            "list-style-type: none; margin-left: -25px;";
+        }
       });
     }
 
@@ -53,9 +163,15 @@
         removeBulletPointsFromTaskListItem();
       });
     });
-  </script>
 
-  <body>
-    <article class="markdown-body"></article>
-  </body>
+    const toggle = document.querySelector(".switch > input");
+    toggle.addEventListener("click", () => {
+      const currTheme = document.documentElement.getAttribute("data-theme");
+      if (!currTheme || currTheme === "light") {
+        document.documentElement.setAttribute("data-theme", "dark");
+      } else {
+        document.documentElement.setAttribute("data-theme", "light");
+      }
+    });
+  </script>
 </html>

@@ -3,6 +3,7 @@
     "github-markdown-css": "^5.0.0"
   },
   "devDependencies": {
+    "generate-github-markdown-css": "^5.0.1",
     "prettier": "^2.5.1"
   }
 }
