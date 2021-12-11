@@ -30,7 +30,7 @@ func currentPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func serveCSS(w http.ResponseWriter, r *http.Request) {
-	githubMarkdownCSS, err := getEmbeddedBytes("frontend/styles.css")
+	githubMarkdownCSS, err := getEmbeddedBytes("build/styles.css")
 	if err != nil {
 		exitOnError(err.Error())
 	}
@@ -39,7 +39,7 @@ func serveCSS(w http.ResponseWriter, r *http.Request) {
 }
 
 func serveHTML(w http.ResponseWriter, r *http.Request) {
-	mainHTML, err := getEmbeddedBytes("frontend/index.html")
+	mainHTML, err := getEmbeddedBytes("build/index.html")
 	if err != nil {
 		exitOnError(err.Error())
 	}
