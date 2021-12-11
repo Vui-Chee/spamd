@@ -48,6 +48,7 @@ html[data-theme="dark"] {
   --color-danger-fg: #f85149;
 
   --color-container-border: #30363d;
+  --color-title-bar-bg-color: #0d1117;
 }
 
 :root,
@@ -96,7 +97,8 @@ html[data-theme="light"] {
   --color-attention-subtle: #fff8c5;
   --color-danger-fg: #cf222e;
 
-  --color-container-border: black;
+  --color-container-border: #d0d7de;
+  --color-title-bar-bg-color: #ffffff;
 }
 
 .markdown-body {
