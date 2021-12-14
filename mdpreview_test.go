@@ -87,11 +87,11 @@ func TestInvalidMarkdownFile(t *testing.T) {
 
 	cwd, _ := os.Getwd()
 	cases := []string{
-		testSubdir, // directory
-		".",        // relative path(s)
+		".", // relative path(s)
 		"../",
 		"foobar.md",                  // non-existent file
 		cwd,                          // full path (points to root directory)
+		testdir + "/" + testSubdir,   // directory
 		testdir + "/" + testFiles[1], // invalid extension
 	}
 
