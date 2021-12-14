@@ -32,6 +32,7 @@ func TestInvalidMarkdownFile(t *testing.T) {
 		"../",
 		"foobar", // non-existent node
 		cwd,      // full path (points to root directory)
+		"go.mod", // invalid extension
 	}
 
 	for _, filepath := range cases {
