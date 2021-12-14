@@ -48,10 +48,21 @@ func getFileModtime(filename string) (time.Time, error) {
 // See https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events
 // for more information.
 func eventStreamFormat(data string) []byte {
+	if len(data) <= 0 {
+		return []byte("")
+	}
+
 	var eventPayload string
 	dataLines := strings.Split(data, "\n")
 	for _, line := range dataLines {
-		eventPayload = eventPayload + "data: " + line + "\n"
+		if len(line) > 0 {
+			eventPayload = eventPayload + "data: " + line + "\n"
+		}
 	}
+
+	if len(eventPayload) <= 0 {
+		return []byte("")
+	}
+
 	return []byte(eventPayload + "\n")
 }
