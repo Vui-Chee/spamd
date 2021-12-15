@@ -9,10 +9,6 @@ import (
 	m "github.com/vui-chee/mdpreview/service/middleware"
 )
 
-const (
-	protocol = "http://"
-)
-
 func initRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/refresh", refreshContent)
 	mux.HandleFunc("/content", currentPage)
@@ -35,10 +31,7 @@ func Listen() net.Listener {
 	return l
 }
 
-func Start(args m.Args) {
-	l := Listen()
-	// Open address in browser based on system.
-	openbrowser(protocol + l.Addr().String())
+func Start(l net.Listener, args m.Args) {
 	// Initialize routes
 	mux := http.NewServeMux()
 	initRoutes(mux)
