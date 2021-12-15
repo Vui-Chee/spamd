@@ -8,19 +8,6 @@ import (
 	"path"
 )
 
-type Message struct {
-	Content string `json:"content"`
-}
-
-// To insert variables into `index.html`.
-type InsertHTML struct {
-	Filename string
-}
-
-// Need multiple channels for each connection, otherwise
-// only a single connection will be notified of any changes.
-var messageChannels = make(map[chan string]bool)
-
 func currentPage(w http.ResponseWriter, r *http.Request) {
 	filepath := r.Context().Value("filepath").(string)
 
@@ -32,7 +19,11 @@ func currentPage(w http.ResponseWriter, r *http.Request) {
 
 	// Send markdown contents in Json format.
 	w.Header().Set("Content-Type", "application/json")
-	msg := Message{Content: string(content)}
+
+	type message struct {
+		Content string `json:"content"`
+	}
+	msg := message{Content: string(content)}
 	json.NewEncoder(w).Encode(msg)
 }
 
@@ -53,37 +44,13 @@ func serveHTML(w http.ResponseWriter, r *http.Request) {
 	t := template.New("Main HTML template")
 	t, _ = t.Parse(string(mainHTML))
 	filepath := r.Context().Value("filepath").(string)
-	data := InsertHTML{Filename: path.Base(filepath)}
+
+	// To insert variables into `index.html`.
+	type insertHTML struct {
+		Filename string
+	}
+	data := insertHTML{Filename: path.Base(filepath)}
 
 	w.Header().Set("Content-Type", "text/html")
 	t.Execute(w, data)
-}
-
-func refreshContent(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Connection", "keep-alive")
-	w.Header().Set("Content-Type", "text/event-stream")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-
-	filepath := r.Context().Value("filepath").(string)
-
-	// Create a new channel for each connection.
-	singleChannel := make(chan string)
-	messageChannels[singleChannel] = true
-
-	for {
-		select {
-		case <-singleChannel:
-			content, err := convertMarkdownToHTML(filepath)
-			if err != nil {
-				log.Fatalln(err)
-				continue
-			}
-			w.Write(eventStreamFormat(string(content)))
-			w.(http.Flusher).Flush()
-		case <-r.Context().Done():
-			delete(messageChannels, singleChannel)
-			log.Println("User closed tab. This connection is closed.")
-			return
-		}
-	}
 }

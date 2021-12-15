@@ -5,12 +5,22 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"time"
 
 	m "github.com/vui-chee/mdpreview/service/middleware"
 )
 
-func Start(args m.Args) {
+const (
+	protocol = "http://"
+)
+
+func initRoutes(mux *http.ServeMux) {
+	mux.HandleFunc("/refresh", refreshContent)
+	mux.HandleFunc("/content", currentPage)
+	mux.HandleFunc("/styles", serveCSS)
+	mux.HandleFunc("/", serveHTML)
+}
+
+func Listen() net.Listener {
 	port, err := getFreePort()
 	if err != nil {
 		exitOnError("Failed to get port.")
@@ -22,45 +32,22 @@ func Start(args m.Args) {
 	}
 	fmt.Printf("Server started at port %d.\n", port)
 
-	openbrowser(fmt.Sprintf("http://localhost:%d", port))
+	return l
+}
 
+func Start(args m.Args) {
+	l := Listen()
+	// Open address in browser based on system.
+	openbrowser(protocol + l.Addr().String())
+	// Initialize routes
 	mux := http.NewServeMux()
-	mux.HandleFunc("/refresh", refreshContent)
-	mux.HandleFunc("/content", currentPage)
-	mux.HandleFunc("/styles", serveCSS)
-	mux.HandleFunc("/", serveHTML)
-
+	initRoutes(mux)
 	// Setup middlewares
 	wrapper := m.NewArgsInjector(m.NewLogger(mux), args)
-
 	// Start the blocking server loop.
 	log.Fatal(http.Serve(l, wrapper))
 }
 
 func Watch(filepath string) {
-	go func() {
-		modtime, err := getFileModtime(filepath)
-		if err != nil {
-			log.Fatal(err)
-			return
-		}
-
-		for {
-			time.Sleep(300 * time.Millisecond) // 0.3s
-
-			newModtime, err := getFileModtime(filepath)
-			if err != nil {
-				log.Fatal(err)
-				continue
-			}
-
-			if modtime != newModtime {
-				fmt.Println("File was modified at: ", time.Now().Local())
-				modtime = newModtime
-				for messageChannel := range messageChannels {
-					messageChannel <- newModtime.String()
-				}
-			}
-		}
-	}()
+	watchFile(filepath)
 }
