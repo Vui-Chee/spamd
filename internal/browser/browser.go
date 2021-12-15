@@ -1,4 +1,4 @@
-package service
+package browser
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"runtime"
 )
 
-func openbrowser(url string) {
+func Open(url string) {
 	var err error
 
 	switch runtime.GOOS {
