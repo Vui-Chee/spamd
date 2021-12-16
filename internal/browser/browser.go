@@ -1,26 +1,23 @@
 package browser
 
 import (
-	"fmt"
-	"log"
 	"os/exec"
-	"runtime"
+
+	"github.com/vui-chee/mdpreview/internal/sys"
 )
 
-func Open(url string) {
-	var err error
+type BrowserDelegate struct {
+	cmd *exec.Cmd
+}
 
-	switch runtime.GOOS {
-	case "linux":
-		err = exec.Command("xdg-open", url).Start()
-	case "windows":
-		err = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
-	case "darwin":
-		err = exec.Command("open", url).Start()
-	default:
-		err = fmt.Errorf("unsupported platform")
-	}
-	if err != nil {
-		log.Fatal(err)
+func (b BrowserDelegate) Start() error {
+	return b.cmd.Start()
+}
+
+func Commands(url string) sys.Commands {
+	return sys.Commands{
+		"linux":   BrowserDelegate{cmd: exec.Command("xdg-open", url)},
+		"windows": BrowserDelegate{cmd: exec.Command("rundll32", "url.dll,FileProtocolHandler", url)},
+		"darwin":  BrowserDelegate{cmd: exec.Command("open", url)},
 	}
 }

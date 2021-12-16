@@ -7,6 +7,7 @@ import (
 	"path"
 
 	"github.com/vui-chee/mdpreview/internal/browser"
+	"github.com/vui-chee/mdpreview/internal/sys"
 	"github.com/vui-chee/mdpreview/service"
 	m "github.com/vui-chee/mdpreview/service/middleware"
 )
@@ -29,7 +30,7 @@ func main() {
 	l := service.Listen()
 
 	// Open address in browser based on system.
-	browser.Open(protocol + l.Addr().String())
+	sys.Exec(browser.Commands(protocol + l.Addr().String()))
 
 	service.Watch(filepath)
 	service.Start(l, m.Args{Filepath: filepath})
