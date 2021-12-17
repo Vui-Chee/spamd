@@ -19,3 +19,4 @@ go.work
 
 # Where the final frontend build is placed for embedding.
 build
+mockfs
