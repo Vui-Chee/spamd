@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 	"path"
+
+	"github.com/vui-chee/mdpreview/internal/sys"
 )
 
 func currentPage(w http.ResponseWriter, r *http.Request) {
@@ -30,7 +32,7 @@ func currentPage(w http.ResponseWriter, r *http.Request) {
 func serveCSS(w http.ResponseWriter, r *http.Request) {
 	githubMarkdownCSS, err := getEmbeddedBytes("build/styles.css")
 	if err != nil {
-		exitOnError(err.Error())
+		sys.ErrorAndExit(err.Error())
 	}
 	w.Header().Set("Content-Type", "text/css")
 	w.Write(githubMarkdownCSS)
@@ -39,7 +41,7 @@ func serveCSS(w http.ResponseWriter, r *http.Request) {
 func serveHTML(w http.ResponseWriter, r *http.Request) {
 	mainHTML, err := getEmbeddedBytes("build/index.html")
 	if err != nil {
-		exitOnError(err.Error())
+		sys.ErrorAndExit(err.Error())
 	}
 	t := template.New("Main HTML template")
 	t, _ = t.Parse(string(mainHTML))

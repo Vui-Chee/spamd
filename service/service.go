@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 
+	"github.com/vui-chee/mdpreview/internal/sys"
 	m "github.com/vui-chee/mdpreview/service/middleware"
 )
 
@@ -19,12 +20,12 @@ func initRoutes(mux *http.ServeMux) {
 func Listen() net.Listener {
 	port, err := getFreePort()
 	if err != nil {
-		exitOnError("Failed to get port.")
+		sys.ErrorAndExit("Failed to get port.")
 	}
 
 	l, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", port))
 	if err != nil {
-		exitOnError(fmt.Sprintf("Failed to start server at %d.\n", port))
+		sys.ErrorAndExit(fmt.Sprintf("Failed to start server at %d.\n", port))
 	}
 	fmt.Printf("Server started at port %d.\n", port)
 
