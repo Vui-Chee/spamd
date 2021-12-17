@@ -31,19 +31,15 @@ func TestServeCSS(t *testing.T) {
 		t.Errorf("serveCSS returned wrong status code. Expected: %d. Got: %d.", http.StatusOK, status)
 	}
 
-	gotContentType := rr.Header().Get("Content-Type")
-	wantContentType := "text/css"
-	if gotContentType != wantContentType {
-		t.Errorf("serveCSS returned wrong Content-Type. Expected %s. Got %s.", wantContentType, gotContentType)
+	if got, want := rr.Header().Get("Content-Type"), "text/css"; got != want {
+		t.Errorf("serveCSS returned wrong Content-Type. Expected %s. Got %s.", want, got)
 	}
 
-	gotBody := rr.Body.String()
-	wantBody := `.app {
+	if got, want := rr.Body.String(), `.app {
   background: green;
 }
-`
-	if gotBody != wantBody {
-		t.Errorf("serveCSS returned wrong body:\nExpected %s.\n--\nGot %s.", wantBody, gotBody)
+`; got != want {
+		t.Errorf("serveCSS returned wrong body:\nExpected %s.\n--\nGot %s.", want, got)
 	}
 }
 
