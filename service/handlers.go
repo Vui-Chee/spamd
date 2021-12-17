@@ -1,6 +1,7 @@
 package service
 
 import (
+	"embed"
 	"encoding/json"
 	"html/template"
 	"log"
@@ -9,6 +10,19 @@ import (
 
 	"github.com/vui-chee/mdpreview/internal/sys"
 )
+
+//go:embed build/styles.css
+//go:embed build/index.html
+var f embed.FS
+
+func getEmbeddedBytes(filepath string) ([]byte, error) {
+	data, err := f.ReadFile(filepath)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
 
 func currentPage(w http.ResponseWriter, r *http.Request) {
 	filepath := r.Context().Value("filepath").(string)

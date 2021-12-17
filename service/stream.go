@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/vui-chee/mdpreview/internal/sys"
 )
 
 // Need multiple channels for each connection, otherwise
@@ -43,7 +45,7 @@ func refreshContent(w http.ResponseWriter, r *http.Request) {
 
 func watchFile(filepath string) {
 	go func() {
-		modtime, err := getFileModtime(filepath)
+		modtime, err := sys.Modtime(filepath)
 		if err != nil {
 			log.Fatal(err)
 			return
@@ -52,7 +54,7 @@ func watchFile(filepath string) {
 		for {
 			time.Sleep(300 * time.Millisecond) // 0.3s
 
-			newModtime, err := getFileModtime(filepath)
+			newModtime, err := sys.Modtime(filepath)
 			if err != nil {
 				log.Fatal(err)
 				continue

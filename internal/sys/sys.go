@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"time"
 )
 
 type Delegate interface {
@@ -22,4 +23,14 @@ func ErrorAndExit(msg string) {
 		fmt.Fprintf(os.Stderr, "\n\n")
 	}
 	os.Exit(1)
+}
+
+// Returns the last modified time on file.
+func Modtime(filename string) (time.Time, error) {
+	info, err := os.Lstat(filename)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return info.ModTime(), nil
 }
