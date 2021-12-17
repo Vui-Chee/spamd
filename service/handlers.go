@@ -50,8 +50,9 @@ func currentPage(w http.ResponseWriter, r *http.Request) {
 func serveCSS(w http.ResponseWriter, r *http.Request) {
 	githubMarkdownCSS, err := getEmbeddedBytes(fsPrefix + "/" + "styles.css")
 	if err != nil {
-		// Return 404 (Not Found)
-		sys.ErrorAndExit(err.Error())
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte("404 - Failed to read from styles.css"))
+		return
 	}
 	w.Header().Set("Content-Type", "text/css")
 	w.Write(githubMarkdownCSS)

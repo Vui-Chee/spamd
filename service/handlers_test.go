@@ -8,15 +8,17 @@ import (
 )
 
 //go:embed mockfs
-var testFS embed.FS
+var mockFS embed.FS
 
 func init() {
-	// During testing, use this static testing folder instead.
-	f = testFS
+	// Use this mock testing folder
 	fsPrefix = "mockfs"
 }
 
 func TestServeCSS(t *testing.T) {
+	// During testing, use this static testing folder instead.
+	f = mockFS
+
 	req, err := http.NewRequest("GET", "/styles", nil)
 	if err != nil {
 		t.Errorf("Error creating a new request: %v", err)
@@ -42,5 +44,23 @@ func TestServeCSS(t *testing.T) {
 `
 	if gotBody != wantBody {
 		t.Errorf("serveCSS returned wrong body:\nExpected %s.\n--\nGot %s.", wantBody, gotBody)
+	}
+}
+
+func TestServeCSSwithError(t *testing.T) {
+	var fakeFS embed.FS
+	// Change to non-existent folder
+	f = fakeFS
+
+	req, err := http.NewRequest("GET", "/styles", nil)
+	if err != nil {
+		t.Errorf("Error creating a new request: %v", err)
+	}
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(serveCSS)
+	handler.ServeHTTP(rr, req)
+	if status := rr.Code; status != http.StatusNotFound {
+		t.Errorf("serveCSS returned wrong status code. Expected: %d. Got: %d.", http.StatusOK, status)
 	}
 }
