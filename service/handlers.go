@@ -11,9 +11,13 @@ import (
 	"github.com/vui-chee/mdpreview/internal/sys"
 )
 
-//go:embed build/styles.css
-//go:embed build/index.html
-var f embed.FS
+var (
+	//go:embed build
+	f embed.FS
+
+	// Folder where static files are stored (relative to this directory)
+	fsPrefix string = "build"
+)
 
 func getEmbeddedBytes(filepath string) ([]byte, error) {
 	data, err := f.ReadFile(filepath)
@@ -44,8 +48,9 @@ func currentPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func serveCSS(w http.ResponseWriter, r *http.Request) {
-	githubMarkdownCSS, err := getEmbeddedBytes("build/styles.css")
+	githubMarkdownCSS, err := getEmbeddedBytes(fsPrefix + "/" + "styles.css")
 	if err != nil {
+		// Return 404 (Not Found)
 		sys.ErrorAndExit(err.Error())
 	}
 	w.Header().Set("Content-Type", "text/css")
@@ -53,7 +58,7 @@ func serveCSS(w http.ResponseWriter, r *http.Request) {
 }
 
 func serveHTML(w http.ResponseWriter, r *http.Request) {
-	mainHTML, err := getEmbeddedBytes("build/index.html")
+	mainHTML, err := getEmbeddedBytes(fsPrefix + "/" + "index.html")
 	if err != nil {
 		sys.ErrorAndExit(err.Error())
 	}
