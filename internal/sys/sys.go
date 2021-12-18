@@ -1,8 +1,10 @@
 package sys
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"path"
 	"runtime"
 	"time"
 )
@@ -33,4 +35,29 @@ func Modtime(filename string) (time.Time, error) {
 	}
 
 	return info.ModTime(), nil
+}
+
+func Exists(path string) bool {
+	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
+		return false
+	}
+
+	return true
+}
+
+// Returns false if path entered is not a
+// valid markdown file.
+func IsFileWithExt(filepath string, targetExt string) bool {
+	info, err := os.Lstat(filepath)
+	if err != nil || info.IsDir() {
+		return false
+	}
+
+	ext := path.Ext(info.Name())
+	fmt.Println("EXT: ", ext)
+	if ext != targetExt {
+		return false
+	}
+
+	return true
 }

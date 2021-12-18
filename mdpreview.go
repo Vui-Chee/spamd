@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"path"
 
 	"github.com/vui-chee/mdpreview/internal/browser"
 	"github.com/vui-chee/mdpreview/internal/sys"
@@ -23,7 +22,7 @@ func main() {
 	}
 
 	var filepath string = flag.Args()[0]
-	if !isMarkdownFile(filepath) {
+	if !sys.IsFileWithExt(filepath, ".md") {
 		exitAfterUsage("File must be a markdown document.")
 	}
 
@@ -43,20 +42,4 @@ func exitAfterUsage(msg string) {
 	}
 	flag.Usage()
 	os.Exit(1)
-}
-
-// Returns false if path entered is not a
-// valid markdown file.
-func isMarkdownFile(filepath string) bool {
-	info, err := os.Lstat(filepath)
-	if err != nil || info.IsDir() {
-		return false
-	}
-
-	ext := path.Ext(info.Name())
-	if ext != ".md" {
-		return false
-	}
-
-	return true
 }
