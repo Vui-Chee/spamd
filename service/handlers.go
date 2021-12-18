@@ -7,8 +7,6 @@ import (
 	"log"
 	"net/http"
 	"path"
-
-	"github.com/vui-chee/mdpreview/internal/sys"
 )
 
 var (
@@ -63,7 +61,9 @@ func serveCSS(w http.ResponseWriter, r *http.Request) {
 func serveHTML(w http.ResponseWriter, r *http.Request) {
 	mainHTML, err := getEmbeddedBytes(fsPrefix + "/" + "index.html")
 	if err != nil {
-		sys.ErrorAndExit(err.Error())
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte("404 - Failed to read from index.html"))
+		return
 	}
 
 	t := template.New("Main HTML template")
