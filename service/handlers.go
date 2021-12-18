@@ -70,12 +70,6 @@ func serveHTML(w http.ResponseWriter, r *http.Request) {
 	t, _ = t.Parse(string(mainHTML))
 	filepath := r.Context().Value("filepath").(string)
 
-	// To insert variables into `index.html`.
-	type insertHTML struct {
-		Filename string
-	}
-	data := insertHTML{Filename: path.Base(filepath)}
-
 	w.Header().Set("Content-Type", "text/html")
-	t.Execute(w, data)
+	t.Execute(w, map[string]string{"Filename": path.Base(filepath)})
 }
