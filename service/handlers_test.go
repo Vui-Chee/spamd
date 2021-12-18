@@ -5,19 +5,20 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	testtools "github.com/vui-chee/mdpreview/internal/testing"
 )
 
-//go:embed mockfs
-var mockFS embed.FS
+var x embed.FS = testtools.MockFS
 
 func init() {
 	// Use this mock testing folder
 	fsPrefix = "mockfs"
 }
 
-func TestServeCSS(t *testing.T) {
+func TestGetStylesheet(t *testing.T) {
 	// During testing, use this static testing folder instead.
-	f = mockFS
+	f = testtools.MockFS
 
 	req, err := http.NewRequest("GET", "/styles", nil)
 	if err != nil {
@@ -43,7 +44,7 @@ func TestServeCSS(t *testing.T) {
 	}
 }
 
-func TestServeCSSwithError(t *testing.T) {
+func TestInvalidGetBytes(t *testing.T) {
 	var fakeFS embed.FS
 	// Change to non-existent folder
 	f = fakeFS

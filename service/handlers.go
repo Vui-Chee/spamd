@@ -15,7 +15,9 @@ var (
 	//go:embed build
 	f embed.FS
 
-	// Folder where static files are stored (relative to this directory)
+	// Folder where static files are stored (relative to this directory).
+	// This variable is overwritten during testing with the folder
+	// where the static files are actually stored.
 	fsPrefix string = "build"
 )
 
@@ -63,6 +65,7 @@ func serveHTML(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		sys.ErrorAndExit(err.Error())
 	}
+
 	t := template.New("Main HTML template")
 	t, _ = t.Parse(string(mainHTML))
 	filepath := r.Context().Value("filepath").(string)
