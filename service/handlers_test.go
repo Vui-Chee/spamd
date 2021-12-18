@@ -44,7 +44,7 @@ func TestGetEmbeddedCSS(t *testing.T) {
 	}
 }
 
-func TestErrOnMissingFS(t *testing.T) {
+func TestServeCSS_ErrOnMissingFS(t *testing.T) {
 	var fakeFS embed.FS
 	// Change to non-existent folder
 	f = fakeFS
