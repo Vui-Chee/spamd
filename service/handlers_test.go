@@ -16,7 +16,7 @@ func init() {
 	fsPrefix = "mockfs"
 }
 
-func TestGetStylesheet(t *testing.T) {
+func TestGetEmbeddedCSS(t *testing.T) {
 	// During testing, use this static testing folder instead.
 	f = testtools.MockFS
 
@@ -44,7 +44,7 @@ func TestGetStylesheet(t *testing.T) {
 	}
 }
 
-func TestInvalidGetBytes(t *testing.T) {
+func TestErrOnMissingFS(t *testing.T) {
 	var fakeFS embed.FS
 	// Change to non-existent folder
 	f = fakeFS
