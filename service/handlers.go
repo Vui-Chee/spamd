@@ -19,15 +19,6 @@ var (
 	fsPrefix string = "build"
 )
 
-func getEmbeddedBytes(filepath string) ([]byte, error) {
-	data, err := f.ReadFile(filepath)
-	if err != nil {
-		return nil, err
-	}
-
-	return data, nil
-}
-
 func currentPage(w http.ResponseWriter, r *http.Request) {
 	filepath := r.Context().Value("filepath").(string)
 
@@ -48,7 +39,7 @@ func currentPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func serveCSS(w http.ResponseWriter, r *http.Request) {
-	githubMarkdownCSS, err := getEmbeddedBytes(fsPrefix + "/" + "styles.css")
+	githubMarkdownCSS, err := f.ReadFile(fsPrefix + "/" + "styles.css")
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte("404 - Failed to read from styles.css"))
@@ -59,7 +50,7 @@ func serveCSS(w http.ResponseWriter, r *http.Request) {
 }
 
 func serveHTML(w http.ResponseWriter, r *http.Request) {
-	mainHTML, err := getEmbeddedBytes(fsPrefix + "/" + "index.html")
+	mainHTML, err := f.ReadFile(fsPrefix + "/" + "index.html")
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte("404 - Failed to read from index.html"))
