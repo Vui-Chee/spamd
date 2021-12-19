@@ -38,8 +38,7 @@ func serveHTML(w http.ResponseWriter, r *http.Request) {
 
 	t := template.New("Main HTML template")
 	t, _ = t.Parse(string(mainHTML))
-	filepath := r.Context().Value("filepath").(string)
 
 	w.Header().Set("Content-Type", "text/html")
-	t.Execute(w, map[string]string{"Filename": path.Base(filepath)})
+	t.Execute(w, map[string]string{"Filename": path.Base(r.URL.Path), "URI": r.URL.Path})
 }

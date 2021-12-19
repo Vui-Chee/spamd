@@ -146,10 +146,8 @@
       });
     }
 
-    // TODO: grab file uri from template.
-    //
     // Listen to server events using `EventSource`.
-    let eventListener = new EventSource("/refresh");
+    let eventListener = new EventSource("/refresh{{.URI}}");
     eventListener.onmessage = (event) => {
       let { data } = event;
       let contentDiv = document.querySelector(".markdown-body");
