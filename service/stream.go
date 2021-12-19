@@ -15,16 +15,24 @@ import (
 var messageChannels = make(map[chan string]bool)
 
 func refreshContent(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Connection", "keep-alive")
-	w.Header().Set("Content-Type", "text/event-stream")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	ctx := r.Context().Value("filepath")
+	if ctx == nil {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte("refreshContent: ctx filepath is <nil>."))
+		return
+	}
 
-	filepath := r.Context().Value("filepath").(string)
+	filepath := ctx.(string)
 
 	// Create a new channel for each connection.
 	singleChannel := make(chan string)
 	messageChannels[singleChannel] = true
 
+	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	// Qn. How does this know which channel to listen without the filepath???
 	for {
 		select {
 		case <-singleChannel:

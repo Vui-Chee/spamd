@@ -20,7 +20,13 @@ var (
 )
 
 func currentPage(w http.ResponseWriter, r *http.Request) {
-	filepath := r.Context().Value("filepath").(string)
+	ctx := r.Context().Value("filepath")
+	if ctx == nil {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte("currentPage: ctx filepath is <nil>."))
+		return
+	}
+	filepath := ctx.(string)
 
 	content, err := convertMarkdownToHTML(filepath)
 	if err != nil {
