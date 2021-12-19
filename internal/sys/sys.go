@@ -54,7 +54,6 @@ func IsFileWithExt(filepath string, targetExt string) bool {
 	}
 
 	ext := path.Ext(info.Name())
-	fmt.Println("EXT: ", ext)
 	if ext != targetExt {
 		return false
 	}
