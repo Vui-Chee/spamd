@@ -29,9 +29,9 @@ func main() {
 	l := service.Listen()
 
 	// Open address in browser based on system.
-	sys.Exec(browser.Commands(protocol + l.Addr().String()))
+	sys.Exec(browser.Commands(protocol + l.Addr().String() + "/" + filepath))
 
-	service.Watch(filepath)
+	service.Watch()
 	service.Start(l, m.Args{Filepath: filepath})
 }
 

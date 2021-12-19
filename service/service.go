@@ -74,6 +74,6 @@ func Start(l net.Listener, args m.Args) {
 	log.Fatal(http.Serve(l, wrapper))
 }
 
-func Watch(filepath string) {
-	watchFile(filepath)
+func Watch() {
+	watchFile()
 }

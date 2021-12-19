@@ -84,7 +84,7 @@ func refreshContent(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func watchFile(filepath string) {
+func watchFile() {
 	go func() {
 		// Iterate through fileTracker
 		// - for each file
