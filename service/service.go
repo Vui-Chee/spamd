@@ -62,7 +62,7 @@ func additionalCheck(path string) bool {
 	return true
 }
 
-func Start(l net.Listener, args m.Args) {
+func Start(l net.Listener) {
 	mux := m.RegexpHandler{
 		AdditionalCheck: additionalCheck,
 	}

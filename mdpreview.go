@@ -8,7 +8,6 @@ import (
 	"github.com/vui-chee/mdpreview/internal/browser"
 	"github.com/vui-chee/mdpreview/internal/sys"
 	"github.com/vui-chee/mdpreview/service"
-	m "github.com/vui-chee/mdpreview/service/middleware"
 )
 
 const (
@@ -32,7 +31,7 @@ func main() {
 	sys.Exec(browser.Commands(protocol + l.Addr().String() + "/" + filepath))
 
 	service.Watch()
-	service.Start(l, m.Args{Filepath: filepath})
+	service.Start(l)
 }
 
 func exitAfterUsage(msg string) {
