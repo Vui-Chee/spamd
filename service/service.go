@@ -41,13 +41,13 @@ func Listen() net.Listener {
 }
 
 func additionalCheck(path string) bool {
-	if path == "/styles" {
+	if path == StylesPattern {
 		return true
 	}
 
 	var uri string
-	refreshRegex, _ := regexp.Compile("^/refresh/.+")
-	htmlRegex, _ := regexp.Compile("^/.+")
+	refreshRegex, _ := regexp.Compile(RefreshPattern)
+	htmlRegex, _ := regexp.Compile(AllElse)
 	if refreshRegex.MatchString(path) {
 		uri = path[len("/refresh"):]
 	} else if htmlRegex.MatchString(path) {
