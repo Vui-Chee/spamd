@@ -2,9 +2,7 @@ package service
 
 import (
 	"embed"
-	"encoding/json"
 	"html/template"
-	"log"
 	"net/http"
 	"path"
 )
@@ -18,31 +16,6 @@ var (
 	// where the static files are actually stored.
 	fsPrefix string = "build"
 )
-
-func currentPage(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context().Value("filepath")
-	if ctx == nil {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte("currentPage: ctx filepath is <nil>."))
-		return
-	}
-	filepath := ctx.(string)
-
-	content, err := convertMarkdownToHTML(filepath)
-	if err != nil {
-		log.Fatalln(err)
-		return
-	}
-
-	// Send markdown contents in Json format.
-	w.Header().Set("Content-Type", "application/json")
-
-	type message struct {
-		Content string `json:"content"`
-	}
-	msg := message{Content: string(content)}
-	json.NewEncoder(w).Encode(msg)
-}
 
 func serveCSS(w http.ResponseWriter, r *http.Request) {
 	githubMarkdownCSS, err := f.ReadFile(fsPrefix + "/" + "styles.css")

@@ -6,19 +6,19 @@ import (
 	"net"
 	"net/http"
 
+	"github.com/vui-chee/mdpreview/internal/common"
 	"github.com/vui-chee/mdpreview/internal/sys"
 	m "github.com/vui-chee/mdpreview/service/middleware"
 )
 
 func initRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/refresh", refreshContent)
-	mux.HandleFunc("/content", currentPage)
 	mux.HandleFunc("/styles", serveCSS)
 	mux.HandleFunc("/", serveHTML)
 }
 
 func Listen() net.Listener {
-	port, err := getFreePort()
+	port, err := common.NextPort()
 	if err != nil {
 		sys.ErrorAndExit("Failed to get port.")
 	}
@@ -44,25 +44,4 @@ func Start(l net.Listener, args m.Args) {
 
 func Watch(filepath string) {
 	watchFile(filepath)
-}
-
-// Returns the next free TCP port. Otherwise,
-// return an error.
-//
-// This function tries to create a connection on localhost:0.
-// If it can, that means the port is free. So return the stored
-// port number back to the user.
-func getFreePort() (int, error) {
-	addr, err := net.ResolveTCPAddr("tcp", "localhost:0")
-	if err != nil {
-		return -1, err
-	}
-
-	l, err := net.ListenTCP("tcp", addr)
-	defer l.Close()
-	if err != nil {
-		return -1, err
-	}
-
-	return l.Addr().(*net.TCPAddr).Port, nil
 }

@@ -32,7 +32,15 @@ func refreshContent(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
-	// Qn. How does this know which channel to listen without the filepath???
+	// First time create channel, also sent first page.
+	content, err := convertMarkdownToHTML(filepath)
+	if err != nil {
+		log.Fatalln(err)
+		return
+	}
+	w.Write(eventStreamFormat(string(content)))
+	w.(http.Flusher).Flush()
+
 	for {
 		select {
 		case <-singleChannel:
