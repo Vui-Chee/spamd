@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"embed"
 	"net/http"
 	"net/http/httptest"
@@ -67,8 +66,7 @@ func TestGetEmbeddedHTML(t *testing.T) {
 	// During testing, use this static testing folder instead.
 	f = testtools.MockFS
 
-	ctx := context.WithValue(context.TODO(), "filepath", "example-path")
-	req, err := http.NewRequestWithContext(ctx, "GET", "/", nil)
+	req, err := http.NewRequest("GET", "/README.md", nil)
 	if err != nil {
 		t.Errorf("Error creating a new request: %v", err)
 	}
@@ -88,10 +86,10 @@ func TestGetEmbeddedHTML(t *testing.T) {
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title></title>
+    <title>README.md</title>
   </head>
   <body>
-    <div class="app">testing</div>
+    <div class="app">/README.md</div>
   </body>
 </html>
 `; got != want {
