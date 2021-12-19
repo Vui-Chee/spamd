@@ -5,10 +5,18 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
+	"regexp"
 
 	"github.com/vui-chee/mdpreview/internal/common"
 	"github.com/vui-chee/mdpreview/internal/sys"
 	m "github.com/vui-chee/mdpreview/service/middleware"
+)
+
+const (
+	RefreshPattern = "^/refresh/.+"
+	StylesPattern  = "/styles"
+	AllElse        = "^/.+"
 )
 
 func initRoutes(mux *http.ServeMux) {
@@ -32,13 +40,37 @@ func Listen() net.Listener {
 	return l
 }
 
+func additionalCheck(path string) bool {
+	if path == "/styles" {
+		return true
+	}
+
+	var uri string
+	refreshRegex, _ := regexp.Compile("^/refresh/.+")
+	htmlRegex, _ := regexp.Compile("^/.+")
+	if refreshRegex.MatchString(path) {
+		uri = path[len("/refresh"):]
+	} else if htmlRegex.MatchString(path) {
+		uri = path
+	}
+
+	cwd, _ := os.Getwd()
+	if !sys.IsFileWithExt(cwd+uri, ".md") {
+		return false
+	}
+
+	return true
+}
+
 func Start(l net.Listener, args m.Args) {
-	// Initialize routes
-	mux := http.NewServeMux()
-	initRoutes(mux)
-	// Setup middlewares
-	wrapper := m.NewArgsInjector(m.NewLogger(mux), args)
-	// Start the blocking server loop.
+	mux := m.RegexpHandler{
+		AdditionalCheck: additionalCheck,
+	}
+	mux.HandleFunc(StylesPattern, serveCSS)
+	mux.HandleFunc(RefreshPattern, refreshContent)
+	mux.HandleFunc(AllElse, serveHTML)
+	wrapper := m.NewLogger(&mux)
+
 	log.Fatal(http.Serve(l, wrapper))
 }
 
