@@ -35,12 +35,11 @@ func Listen() net.Listener {
 	if err != nil {
 		sys.ErrorAndExit(fmt.Sprintf("Failed to start server at %d.\n", port))
 	}
-	fmt.Printf("Server started at port %d.\n", port)
 
 	return l
 }
 
-func additionalCheck(path string) bool {
+func redirectIfNotMarkdown(path string) bool {
 	if path == StylesPattern {
 		return true
 	}
@@ -64,7 +63,7 @@ func additionalCheck(path string) bool {
 
 func Start(l net.Listener) {
 	mux := m.RegexpHandler{
-		AdditionalCheck: additionalCheck,
+		AdditionalCheck: redirectIfNotMarkdown,
 	}
 	mux.HandleFunc(StylesPattern, serveCSS)
 	mux.HandleFunc(RefreshPattern, refreshContent)
