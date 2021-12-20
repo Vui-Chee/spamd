@@ -12,6 +12,8 @@ import (
 )
 
 const (
+	defaultMarkdown = "README.md"
+
 	protocol = "http://"
 
 	usage = `Usage: mdpreview <path-to-markdown>
@@ -23,7 +25,7 @@ func main() {
 		fmt.Fprint(os.Stderr, usage)
 	}
 
-	var filepath string = "README.md"
+	var filepath string = defaultMarkdown
 	var l net.Listener = service.Listen()
 	defer l.Close()
 
