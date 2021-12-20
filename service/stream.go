@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/vui-chee/mdpreview/internal/sys"
@@ -15,13 +16,27 @@ type fileInfo struct {
 	Count       int
 }
 
-// Maps a file URI to the number browser tabs
+// Maps a relative filepath to the number browser tabs
 // that open it as well as the files last modified time.
 var fileTracker = make(map[string]*fileInfo)
+
+// Allows many threads to read `fileTracker` and only 1 write
+// at any one time.
+var lock = sync.RWMutex{}
 
 // Need multiple channels for each connection, otherwise
 // only a single connection will be notified of any changes.
 var messageChannels = make(map[chan string]string)
+
+func readAndSendMarkdown(w http.ResponseWriter, filepath string) error {
+	content, err := convertMarkdownToHTML(filepath)
+	if err != nil {
+		return err
+	}
+	w.Write(eventStreamFormat(string(content)))
+	w.(http.Flusher).Flush()
+	return nil
+}
 
 func refreshContent(w http.ResponseWriter, r *http.Request) {
 	// Get the path relative to the directory where the tool is run.
@@ -35,38 +50,38 @@ func refreshContent(w http.ResponseWriter, r *http.Request) {
 	// to filter channels by file that has been modified.
 	messageChannels[singleChannel] = filepath
 
-	if _, ok := fileTracker[filepath]; ok {
-		fileTracker[filepath].Count++
-	} else {
-		fileTracker[filepath] = &fileInfo{
-			Count:       1,
-			Lastmodifed: time.Now(),
+	// Create a critical block.
+	func() {
+		lock.RLock()
+		defer lock.RUnlock()
+
+		if _, ok := fileTracker[filepath]; ok { // read
+			fileTracker[filepath].Count++ // write
+		} else {
+			fileTracker[filepath] = &fileInfo{ // write
+				Count:       1,
+				Lastmodifed: time.Now(),
+			}
 		}
-	}
+	}()
 
 	w.Header().Set("Connection", "keep-alive")
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	// First time create channel, also sent first page.
-	content, err := convertMarkdownToHTML(filepath)
-	if err != nil {
+	if err := readAndSendMarkdown(w, filepath); err != nil {
 		log.Fatalln(err)
 		return
 	}
-	w.Write(eventStreamFormat(string(content)))
-	w.(http.Flusher).Flush()
 
 	for {
 		select {
 		case <-singleChannel:
-			content, err := convertMarkdownToHTML(filepath)
-			if err != nil {
+			if err := readAndSendMarkdown(w, filepath); err != nil {
 				log.Fatalln(err)
 				continue
 			}
-			w.Write(eventStreamFormat(string(content)))
-			w.(http.Flusher).Flush()
 		case <-r.Context().Done():
 			// Only decrement if key exists.
 			if _, ok := fileTracker[filepath]; ok {
@@ -86,32 +101,35 @@ func refreshContent(w http.ResponseWriter, r *http.Request) {
 
 func watchFile() {
 	go func() {
-		// Iterate through fileTracker
-		// - for each file
-		// - check file is modified
-		// - if so, filter all channels by file -> write to the channels
 		for {
 			time.Sleep(300 * time.Millisecond) // 0.3s
 
-			for filepath, info := range fileTracker {
-				newModtime, err := sys.Modtime(filepath)
-				if err != nil {
-					log.Fatal(err)
-					continue
-				}
+			func() {
+				lock.RLock()
+				defer lock.RUnlock()
 
-				// How is it working when I haven't filter by filepath???
-				if info.Lastmodifed != newModtime {
-					fmt.Println("File was modified at: ", time.Now().Local())
-					info.Lastmodifed = newModtime // update modified time
-					for messageChannel, channelPath := range messageChannels {
-						// Only write to channels belonging to filepath.
-						if filepath == channelPath {
-							messageChannel <- newModtime.String()
+				for filepath, info := range fileTracker { // read
+					newModtime, err := sys.Modtime(filepath)
+					if err != nil {
+						log.Fatal(err)
+						continue
+					}
+
+					if info.Lastmodifed != newModtime {
+						fmt.Println("File was modified at: ", time.Now().Local())
+
+						info.Lastmodifed = newModtime // update modified time (write)
+
+						for messageChannel, channelPath := range messageChannels {
+							// Only write to channels belonging to filepath.
+							if filepath == channelPath {
+								messageChannel <- newModtime.String()
+							}
 						}
 					}
 				}
-			}
+			}()
+
 		}
 	}()
 }
