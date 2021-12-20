@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"net"
 	"os"
 
 	"github.com/vui-chee/mdpreview/internal/browser"
@@ -12,23 +13,36 @@ import (
 
 const (
 	protocol = "http://"
+
+	usage = `Usage: mdpreview <path-to-markdown>
+`
 )
 
 func main() {
+	flag.Usage = func() {
+		fmt.Fprint(os.Stderr, usage)
+	}
+
+	var filepath string = "README.md"
+	var l net.Listener = service.Listen()
+	defer l.Close()
+
 	flag.Parse()
-	if flag.NArg() < 1 {
-		exitAfterUsage("Please enter a file.")
+	if flag.NArg() >= 1 {
+		filepath = flag.Args()[0]
+		if !sys.IsFileWithExt(filepath, ".md") {
+			exitAfterUsage("File must be a markdown document.")
+		}
+
+		sys.Exec(browser.Commands(protocol + l.Addr().String() + "/" + filepath))
+	} else {
+		if sys.Exists(filepath) {
+			sys.Exec(browser.Commands(protocol + l.Addr().String() + "/" + filepath))
+		}
 	}
 
-	var filepath string = flag.Args()[0]
-	if !sys.IsFileWithExt(filepath, ".md") {
-		exitAfterUsage("File must be a markdown document.")
-	}
-
-	l := service.Listen()
-
-	// Open address in browser based on system.
-	sys.Exec(browser.Commands(protocol + l.Addr().String() + "/" + filepath))
+	fmt.Printf("Visit your markdown at %s/{path-to-markdown}.\n\n", protocol+l.Addr().String())
+	fmt.Println("{path-to-markdown} can be a relative path from current directory.")
 
 	service.Watch()
 	service.Start(l)
