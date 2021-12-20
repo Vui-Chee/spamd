@@ -16,20 +16,21 @@ type fileInfo struct {
 	Count       int
 }
 
-// Use single crude lock over all shared data structures. For this
-// simple use case where only one user read/writes to markdown file,
-// it is not required to have a performant locking mechanism.
-var lock = sync.Mutex{}
+type FileWatcher struct {
+	// Maps a relative filepath to the number browser tabs
+	// that open it as well as the files last modified time.
+	trackFiles map[string]*fileInfo
+	// Need multiple channels for each connection, otherwise
+	// only a single connection will be notified of any changes.
+	messageChannels map[chan string]string
 
-// Maps a relative filepath to the number browser tabs
-// that open it as well as the files last modified time.
-var fileTracker = make(map[string]*fileInfo)
+	// Use single crude lock over all shared data structures. For this
+	// simple use case where only one user read/writes to markdown file,
+	// it is not required to have a performant locking mechanism.
+	lock sync.Mutex
+}
 
-// Need multiple channels for each connection, otherwise
-// only a single connection will be notified of any changes.
-var messageChannels = make(map[chan string]string)
-
-func refreshContent(w http.ResponseWriter, r *http.Request) {
+func (f *FileWatcher) RefreshContent(w http.ResponseWriter, r *http.Request) {
 	// Get the path relative to the directory where the tool is run.
 	// '+1' to skip the leading '/'.
 	uri := r.URL.Path
@@ -37,17 +38,19 @@ func refreshContent(w http.ResponseWriter, r *http.Request) {
 
 	// Create a new channel for each connection.
 	singleChannel := make(chan string)
-	// Pass the URI as a value to allow the watcher
-	// to filter channels by file that has been modified.
-	messageChannels[singleChannel] = filepath
 
 	func() {
-		lock.Lock()
-		defer lock.Unlock()
-		if _, ok := fileTracker[filepath]; ok {
-			fileTracker[filepath].Count++
+		f.lock.Lock()
+		defer f.lock.Unlock()
+
+		// Pass the URI as a value to allow the watcher
+		// to filter channels by file that has been modified.
+		f.messageChannels[singleChannel] = filepath
+
+		if _, ok := f.trackFiles[filepath]; ok {
+			f.trackFiles[filepath].Count++
 		} else {
-			fileTracker[filepath] = &fileInfo{
+			f.trackFiles[filepath] = &fileInfo{
 				Count:       1,
 				Lastmodifed: time.Now(),
 			}
@@ -73,18 +76,18 @@ func refreshContent(w http.ResponseWriter, r *http.Request) {
 			}
 		case <-r.Context().Done():
 			func() {
-				lock.Lock()
-				defer lock.Unlock()
+				f.lock.Lock()
+				defer f.lock.Unlock()
 				// Only decrement if key exists.
-				if _, ok := fileTracker[filepath]; ok {
-					fileTracker[filepath].Count-- // Possible write despite lock???
-					if fileTracker[filepath].Count <= 0 {
-						delete(fileTracker, filepath)
+				if _, ok := f.trackFiles[filepath]; ok {
+					f.trackFiles[filepath].Count--
+					if f.trackFiles[filepath].Count <= 0 {
+						delete(f.trackFiles, filepath)
 					}
 				}
-			}()
 
-			delete(messageChannels, singleChannel)
+				delete(f.messageChannels, singleChannel)
+			}()
 
 			log.Println("User closed tab. This connection is closed.")
 			return
@@ -92,16 +95,16 @@ func refreshContent(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func watchFile() {
+func (f *FileWatcher) Watch() {
 	go func() {
 		for {
 			time.Sleep(300 * time.Millisecond) // 0.3s
 
 			func() {
-				lock.Lock()
-				defer lock.Unlock()
+				f.lock.Lock()
+				defer f.lock.Unlock()
 
-				for filepath, info := range fileTracker {
+				for filepath, info := range f.trackFiles {
 					newModtime, err := sys.Modtime(filepath)
 					if err != nil {
 						log.Fatal(err)
@@ -113,7 +116,7 @@ func watchFile() {
 
 						info.Lastmodifed = newModtime // update modified time
 
-						for messageChannel, channelPath := range messageChannels {
+						for messageChannel, channelPath := range f.messageChannels {
 							// Only write to channels belonging to filepath.
 							if filepath == channelPath {
 								messageChannel <- newModtime.String()
@@ -124,6 +127,14 @@ func watchFile() {
 			}()
 		}
 	}()
+}
+
+func NewFileWatcher() *FileWatcher {
+	return &FileWatcher{
+		trackFiles:      make(map[string]*fileInfo),
+		messageChannels: make(map[chan string]string),
+		lock:            sync.Mutex{},
+	}
 }
 
 func readAndSendMarkdown(w http.ResponseWriter, filepath string) error {

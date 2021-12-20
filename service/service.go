@@ -19,12 +19,6 @@ const (
 	AllElse        = "^/.+"
 )
 
-func initRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("/refresh", refreshContent)
-	mux.HandleFunc("/styles", serveCSS)
-	mux.HandleFunc("/", serveHTML)
-}
-
 func Listen() net.Listener {
 	port, err := common.NextPort()
 	if err != nil {
@@ -62,17 +56,18 @@ func redirectIfNotMarkdown(path string) bool {
 }
 
 func Start(l net.Listener) {
+	watcher := NewFileWatcher()
 	mux := m.RegexpHandler{
 		AdditionalCheck: redirectIfNotMarkdown,
 	}
 	mux.HandleFunc(StylesPattern, serveCSS)
-	mux.HandleFunc(RefreshPattern, refreshContent)
+	mux.HandleFunc(RefreshPattern, watcher.RefreshContent)
 	mux.HandleFunc(AllElse, serveHTML)
 	wrapper := m.NewLogger(&mux)
 
 	// Must call this before main thread is blocked
 	// http.Serve.
-	watchFile()
+	watcher.Watch()
 
 	log.Fatal(http.Serve(l, wrapper))
 }
