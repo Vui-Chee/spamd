@@ -16,13 +16,14 @@ type fileInfo struct {
 	Count       int
 }
 
+// Use single crude lock over all shared data structures. For this
+// simple use case where only one user read/writes to markdown file,
+// it is not required to have a performant locking mechanism.
+var lock = sync.Mutex{}
+
 // Maps a relative filepath to the number browser tabs
 // that open it as well as the files last modified time.
 var fileTracker = make(map[string]*fileInfo)
-
-// Allows many threads to read `fileTracker` and only 1 write
-// at any one time.
-var lock = sync.RWMutex{}
 
 // Need multiple channels for each connection, otherwise
 // only a single connection will be notified of any changes.
@@ -40,21 +41,10 @@ func refreshContent(w http.ResponseWriter, r *http.Request) {
 	// to filter channels by file that has been modified.
 	messageChannels[singleChannel] = filepath
 
-	// Lock for reading
-	ok := func() bool {
-		lock.RLock()
-		defer lock.RUnlock()
-		_, ok := fileTracker[filepath]
-		return ok
-	}()
-
-	// Lock for writing.
-	// If >= 1 reader, this section will wait till
-	// readers have finished reading.
 	func() {
-		lock.Lock() // NOTE: differs from lock.RLock()
+		lock.Lock()
 		defer lock.Unlock()
-		if ok {
+		if _, ok := fileTracker[filepath]; ok {
 			fileTracker[filepath].Count++
 		} else {
 			fileTracker[filepath] = &fileInfo{
@@ -82,19 +72,12 @@ func refreshContent(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 		case <-r.Context().Done():
-			ok := func() bool {
-				lock.RLock()
-				defer lock.RUnlock()
-				_, ok := fileTracker[filepath]
-				return ok
-			}()
-
 			func() {
 				lock.Lock()
 				defer lock.Unlock()
 				// Only decrement if key exists.
-				if ok {
-					fileTracker[filepath].Count--
+				if _, ok := fileTracker[filepath]; ok {
+					fileTracker[filepath].Count-- // Possible write despite lock???
 					if fileTracker[filepath].Count <= 0 {
 						delete(fileTracker, filepath)
 					}
@@ -115,13 +98,6 @@ func watchFile() {
 			time.Sleep(300 * time.Millisecond) // 0.3s
 
 			func() {
-				// Use a write lock instead of read as `range`
-				// is read only once before iteration.
-				//
-				// That means the size of the map must be ensured
-				// otherwise, there could a case where an entry
-				// is deleted and a write to `info` could result
-				// in a panic.
 				lock.Lock()
 				defer lock.Unlock()
 
