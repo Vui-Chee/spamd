@@ -28,16 +28,6 @@ var lock = sync.RWMutex{}
 // only a single connection will be notified of any changes.
 var messageChannels = make(map[chan string]string)
 
-func readAndSendMarkdown(w http.ResponseWriter, filepath string) error {
-	content, err := convertMarkdownToHTML(filepath)
-	if err != nil {
-		return err
-	}
-	w.Write(eventStreamFormat(string(content)))
-	w.(http.Flusher).Flush()
-	return nil
-}
-
 func refreshContent(w http.ResponseWriter, r *http.Request) {
 	// Get the path relative to the directory where the tool is run.
 	// '+1' to skip the leading '/'.
@@ -83,13 +73,17 @@ func refreshContent(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 		case <-r.Context().Done():
-			// Only decrement if key exists.
-			if _, ok := fileTracker[filepath]; ok {
-				fileTracker[filepath].Count--
-				if fileTracker[filepath].Count <= 0 {
-					delete(fileTracker, filepath)
+			func() {
+				lock.RLock()
+				defer lock.RUnlock()
+				// Only decrement if key exists.
+				if _, ok := fileTracker[filepath]; ok {
+					fileTracker[filepath].Count--
+					if fileTracker[filepath].Count <= 0 {
+						delete(fileTracker, filepath)
+					}
 				}
-			}
+			}()
 
 			delete(messageChannels, singleChannel)
 
@@ -132,6 +126,16 @@ func watchFile() {
 
 		}
 	}()
+}
+
+func readAndSendMarkdown(w http.ResponseWriter, filepath string) error {
+	content, err := convertMarkdownToHTML(filepath)
+	if err != nil {
+		return err
+	}
+	w.Write(eventStreamFormat(string(content)))
+	w.(http.Flusher).Flush()
+	return nil
 }
 
 // In order for the client side to receive server triggered
