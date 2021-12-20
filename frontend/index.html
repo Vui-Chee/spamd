@@ -6,6 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" href="/styles" />
     <style>
+      html {
+        transition: color 0.2s ease-out, background 0.2s ease-out;
+        background-color: var(--color-bg-color);
+      }
+
       body {
         margin: 0;
       }
@@ -14,7 +19,6 @@
         max-width: 980px;
         margin: 0 auto;
         border: 1px solid var(--color-container-border);
-        transition: color 0.2s ease-out, background 0.2s ease-out;
       }
 
       .title-bar {
@@ -22,7 +26,7 @@
         justify-content: space-between;
         border-bottom: 1px solid var(--color-container-border);
         height: 50px;
-        background-color: var(--color-title-bar-bg-color);
+        background-color: var(--color-bg-color);
       }
 
       .title-bar > h3 {
@@ -30,10 +34,6 @@
         margin: 0;
         line-height: 50px;
         margin-left: 8px;
-      }
-
-      article {
-        transition: color 0.2s ease-out, background 0.2s ease-out;
       }
 
       .markdown-body {
