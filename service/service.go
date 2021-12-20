@@ -70,9 +70,9 @@ func Start(l net.Listener) {
 	mux.HandleFunc(AllElse, serveHTML)
 	wrapper := m.NewLogger(&mux)
 
-	log.Fatal(http.Serve(l, wrapper))
-}
-
-func Watch() {
+	// Must call this before main thread is blocked
+	// http.Serve.
 	watchFile()
+
+	log.Fatal(http.Serve(l, wrapper))
 }

@@ -44,7 +44,6 @@ func main() {
 	fmt.Printf("Visit your markdown at %s/{path-to-markdown}.\n\n", protocol+l.Addr().String())
 	fmt.Println("{path-to-markdown} can be a relative path from current directory.")
 
-	service.Watch()
 	service.Start(l)
 }
 
