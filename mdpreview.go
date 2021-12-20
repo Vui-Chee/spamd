@@ -28,17 +28,17 @@ func main() {
 	defer l.Close()
 
 	flag.Parse()
+
 	if flag.NArg() >= 1 {
 		filepath = flag.Args()[0]
+
 		if !sys.IsFileWithExt(filepath, ".md") {
 			exitAfterUsage("File must be a markdown document.")
 		}
+	}
 
+	if (flag.NArg() >= 1 && sys.IsFileWithExt(filepath, ".md")) || sys.Exists(filepath) {
 		sys.Exec(browser.Commands(protocol + l.Addr().String() + "/" + filepath))
-	} else {
-		if sys.Exists(filepath) {
-			sys.Exec(browser.Commands(protocol + l.Addr().String() + "/" + filepath))
-		}
 	}
 
 	fmt.Printf("Visit your markdown at %s/{path-to-markdown}.\n\n", protocol+l.Addr().String())
