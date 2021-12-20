@@ -40,15 +40,24 @@ func refreshContent(w http.ResponseWriter, r *http.Request) {
 	// to filter channels by file that has been modified.
 	messageChannels[singleChannel] = filepath
 
-	// Create a critical block.
-	func() {
+	// Lock for reading
+	ok := func() bool {
 		lock.RLock()
 		defer lock.RUnlock()
+		_, ok := fileTracker[filepath]
+		return ok
+	}()
 
-		if _, ok := fileTracker[filepath]; ok { // read
-			fileTracker[filepath].Count++ // write
+	// Lock for writing.
+	// If >= 1 reader, this section will wait till
+	// readers have finished reading.
+	func() {
+		lock.Lock() // NOTE: differs from lock.RLock()
+		defer lock.Unlock()
+		if ok {
+			fileTracker[filepath].Count++
 		} else {
-			fileTracker[filepath] = &fileInfo{ // write
+			fileTracker[filepath] = &fileInfo{
 				Count:       1,
 				Lastmodifed: time.Now(),
 			}
@@ -73,11 +82,18 @@ func refreshContent(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 		case <-r.Context().Done():
-			func() {
+			ok := func() bool {
 				lock.RLock()
 				defer lock.RUnlock()
+				_, ok := fileTracker[filepath]
+				return ok
+			}()
+
+			func() {
+				lock.Lock()
+				defer lock.Unlock()
 				// Only decrement if key exists.
-				if _, ok := fileTracker[filepath]; ok {
+				if ok {
 					fileTracker[filepath].Count--
 					if fileTracker[filepath].Count <= 0 {
 						delete(fileTracker, filepath)
@@ -99,10 +115,17 @@ func watchFile() {
 			time.Sleep(300 * time.Millisecond) // 0.3s
 
 			func() {
-				lock.RLock()
-				defer lock.RUnlock()
+				// Use a write lock instead of read as `range`
+				// is read only once before iteration.
+				//
+				// That means the size of the map must be ensured
+				// otherwise, there could a case where an entry
+				// is deleted and a write to `info` could result
+				// in a panic.
+				lock.Lock()
+				defer lock.Unlock()
 
-				for filepath, info := range fileTracker { // read
+				for filepath, info := range fileTracker {
 					newModtime, err := sys.Modtime(filepath)
 					if err != nil {
 						log.Fatal(err)
@@ -112,7 +135,7 @@ func watchFile() {
 					if info.Lastmodifed != newModtime {
 						fmt.Println("File was modified at: ", time.Now().Local())
 
-						info.Lastmodifed = newModtime // update modified time (write)
+						info.Lastmodifed = newModtime // update modified time
 
 						for messageChannel, channelPath := range messageChannels {
 							// Only write to channels belonging to filepath.
@@ -123,7 +146,6 @@ func watchFile() {
 					}
 				}
 			}()
-
 		}
 	}()
 }
