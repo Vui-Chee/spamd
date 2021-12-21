@@ -16,6 +16,11 @@ import (
 
 const (
 	TOOL_NAME = "mdpreview"
+
+	// For matching url patterns (regex) to handler functions.
+	RefreshPattern = "^/refresh/.+"
+	StylesPattern  = "/styles"
+	AllElse        = "^/.+"
 )
 
 // Set the configs for this service as a global,
@@ -31,12 +36,6 @@ func init() {
 		sys.ErrorAndExit(err.Error())
 	}
 }
-
-const (
-	RefreshPattern = "^/refresh/.+"
-	StylesPattern  = "/styles"
-	AllElse        = "^/.+"
-)
 
 func Listen() net.Listener {
 	var port int
