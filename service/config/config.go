@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
 )
 
@@ -88,7 +89,19 @@ func ReadConfigFromFile(configFilename string) (*ServiceConfig, error) {
 	// Read whatever json fields into config variable.
 	var conf ServiceConfig
 	if err := json.Unmarshal(data, &conf); err != nil {
-		return nil, err
+		return nil, errors.New(`The Json config file is poorly formatted.
+Please check your config file again.
+
+An example config file would look as such:
+{
+	"theme": "dark",
+	"codeblock": "monokai",
+	"port": 3000
+}
+
+NOTE: the last line does not have a trailing comma.
+
+` + err.Error())
 	}
 
 	if conf.Theme == "" {
