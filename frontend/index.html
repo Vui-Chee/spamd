@@ -114,8 +114,17 @@
         border-radius: 50%;
       }
     </style>
-  </head>
 
+    <script type="text/javascript">
+      // Set default theme based on custom config.
+      // The config is set in a Json file at $HOME/.{tool_name}.
+      //
+      // This startup code is here to avoid the noticeable transition
+      // between themes (light to dark) when the dark theme is set.
+      var defaultTheme = "{{.Theme}}";
+      document.documentElement.setAttribute("data-theme", defaultTheme);
+    </script>
+  </head>
   <body>
     <div class="container">
       <div class="title-bar">
@@ -165,10 +174,5 @@
         document.documentElement.setAttribute("data-theme", "light");
       }
     });
-
-    // Set default theme based on custom config.
-    // The config is set in a Json file at $HOME/.{tool_name}.
-    var defaultTheme = "{{.Theme}}";
-    document.documentElement.setAttribute("data-theme", defaultTheme);
   </script>
 </html>
