@@ -37,6 +37,11 @@ func init() {
 	}
 }
 
+func OverrideConfig(theme string, codeBlockStyle string) {
+	serviceConfig.SetTheme(theme)
+	serviceConfig.SetCodeBlockTheme(codeBlockStyle)
+}
+
 func Listen(port int) net.Listener {
 	var err error
 
@@ -54,6 +59,23 @@ func Listen(port int) net.Listener {
 	}
 
 	return l
+}
+
+func Start(l net.Listener) {
+	watcher := NewFileWatcher()
+	mux := m.RegexpHandler{
+		AdditionalCheck: redirectIfNotMarkdown,
+	}
+	mux.HandleFunc(StylesPattern, serveCSS)
+	mux.HandleFunc(RefreshPattern, watcher.RefreshContent)
+	mux.HandleFunc(AllElse, serveHTML)
+	wrapper := m.NewLogger(&mux)
+
+	// Must call this before main thread is blocked
+	// http.Serve.
+	watcher.Watch()
+
+	log.Fatal(http.Serve(l, wrapper))
 }
 
 func redirectIfNotMarkdown(path string) bool {
@@ -76,26 +98,4 @@ func redirectIfNotMarkdown(path string) bool {
 	}
 
 	return true
-}
-
-func OverrideConfig(theme string, codeBlockStyle string) {
-	serviceConfig.SetTheme(theme)
-	serviceConfig.SetCodeBlockTheme(codeBlockStyle)
-}
-
-func Start(l net.Listener) {
-	watcher := NewFileWatcher()
-	mux := m.RegexpHandler{
-		AdditionalCheck: redirectIfNotMarkdown,
-	}
-	mux.HandleFunc(StylesPattern, serveCSS)
-	mux.HandleFunc(RefreshPattern, watcher.RefreshContent)
-	mux.HandleFunc(AllElse, serveHTML)
-	wrapper := m.NewLogger(&mux)
-
-	// Must call this before main thread is blocked
-	// http.Serve.
-	watcher.Watch()
-
-	log.Fatal(http.Serve(l, wrapper))
 }
