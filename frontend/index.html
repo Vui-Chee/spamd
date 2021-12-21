@@ -165,5 +165,10 @@
         document.documentElement.setAttribute("data-theme", "light");
       }
     });
+
+    // Set default theme based on custom config.
+    // The config is set in a Json file at $HOME/.{tool_name}.
+    var defaultTheme = "{{.Theme}}";
+    document.documentElement.setAttribute("data-theme", defaultTheme);
   </script>
 </html>

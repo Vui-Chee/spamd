@@ -23,7 +23,7 @@ func convertMarkdownToHTML(pathToMarkdown string) ([]byte, error) {
 			extension.GFM,
 			extension.TaskList,
 			highlighting.NewHighlighting(
-				highlighting.WithStyle("monokai"), // Code highlight colors
+				highlighting.WithStyle(serviceConfig.CodeBlockTheme), // Code highlight colors
 			),
 		),
 		goldmark.WithParserOptions(

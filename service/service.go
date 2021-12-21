@@ -10,8 +10,27 @@ import (
 
 	"github.com/vui-chee/mdpreview/internal/common"
 	"github.com/vui-chee/mdpreview/internal/sys"
+	conf "github.com/vui-chee/mdpreview/service/config"
 	m "github.com/vui-chee/mdpreview/service/middleware"
 )
+
+const (
+	TOOL_NAME = "mdpreview"
+)
+
+// Set the configs for this service as a global,
+// but only accessible within the service package.
+var (
+	serviceConfig *conf.ServiceConfig
+)
+
+func init() {
+	var err error
+	serviceConfig, err = conf.ReadConfigFromFile("." + TOOL_NAME)
+	if err != nil {
+		sys.ErrorAndExit(err.Error())
+	}
+}
 
 const (
 	RefreshPattern = "^/refresh/.+"
@@ -20,7 +39,16 @@ const (
 )
 
 func Listen() net.Listener {
-	port, err := common.NextPort()
+	var port int
+	var err error
+
+	if serviceConfig.Port == 0 {
+		// Generate random if not specified in config file.
+		port, err = common.NextPort()
+	} else {
+		port = serviceConfig.Port
+	}
+
 	if err != nil {
 		sys.ErrorAndExit("Failed to get port.")
 	}

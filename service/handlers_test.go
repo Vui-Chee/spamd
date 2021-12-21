@@ -89,7 +89,7 @@ func TestGetEmbeddedHTML(t *testing.T) {
     <title>README.md</title>
   </head>
   <body>
-    <div class="app">/README.md</div>
+    <div class="app">/README.md</div><div>light</div>
   </body>
 </html>
 `; got != want {
