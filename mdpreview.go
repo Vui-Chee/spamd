@@ -16,7 +16,23 @@ const (
 
 	protocol = "http://"
 
-	usage = `Usage: mdpreview <path-to-markdown>
+	usage = `Usage: mdpreview [options...] <path-to-markdown>
+
+Options:
+	-p Port number (fixed port, otherwise a RANDOM port is supplied)
+	-t Display markdown HTML in "dark" or "light" theme. (default: light)
+	-c The style you want to apply to your code blocks. (default: monokai)
+
+Additionally, if you want to persist any of this configs, you can
+create a .mdpreview JSON file at your HOME directory containing:
+
+	{
+	  "theme": "dark",
+	  "codeblock": "fruity",
+	  "port": 3000
+	}
+
+This is just an example. You can change/omit any of the fields.
 `
 )
 
