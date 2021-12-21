@@ -8,7 +8,7 @@ import (
 	"os"
 	"regexp"
 
-	"github.com/vui-chee/mdpreview/internal/common"
+	// "github.com/vui-chee/mdpreview/internal/common"
 	"github.com/vui-chee/mdpreview/internal/sys"
 	conf "github.com/vui-chee/mdpreview/service/config"
 	m "github.com/vui-chee/mdpreview/service/middleware"
@@ -37,14 +37,10 @@ func init() {
 	}
 }
 
-func Listen() net.Listener {
-	var port int
+func Listen(port int) net.Listener {
 	var err error
 
-	if serviceConfig.Port == 0 {
-		// Generate random if not specified in config file.
-		port, err = common.NextPort()
-	} else {
+	if port == -1 {
 		port = serviceConfig.Port
 	}
 

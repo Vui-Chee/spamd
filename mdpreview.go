@@ -20,16 +20,21 @@ const (
 `
 )
 
+// When applied, these value(s) will override as existing configuration.
+var (
+	p = flag.Int("p", -1, "port")
+)
+
 func main() {
 	flag.Usage = func() {
 		fmt.Fprint(os.Stderr, usage)
 	}
 
-	var filepath string = defaultMarkdown
-	var l net.Listener = service.Listen()
-	defer l.Close()
-
 	flag.Parse()
+
+	var filepath string = defaultMarkdown
+	var l net.Listener = service.Listen(*p)
+	defer l.Close()
 
 	if flag.NArg() >= 1 {
 		filepath = flag.Args()[0]
