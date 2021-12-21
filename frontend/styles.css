@@ -49,6 +49,8 @@ html[data-theme="dark"] {
 
   --color-container-border: #30363d;
   --color-bg-color: #0d1117;
+  --color-slider: slategrey;
+  --color-slider-active: slategrey;
 }
 
 :root,
@@ -99,6 +101,8 @@ html[data-theme="light"] {
 
   --color-container-border: #d0d7de;
   --color-bg-color: #ffffff;
+  --color-slider: black;
+  --color-slider-active: black;
 }
 
 .markdown-body {

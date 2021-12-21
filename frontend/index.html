@@ -53,12 +53,12 @@
       .switch {
         position: relative;
         display: inline-block;
-        width: 60px;
-        height: 34px;
+        width: 50px;
+        height: 24px;
 
         float: right;
         margin-right: 8px;
-        margin-top: 8px;
+        margin-top: 12px;
       }
 
       .switch input {
@@ -74,32 +74,38 @@
         left: 0;
         right: 0;
         bottom: 0;
-        background-color: #ccc;
+        background-color: var(--color-slider);
         -webkit-transition: 0.4s;
         transition: 0.4s;
       }
 
-      .slider:before {
+      .thumb {
         position: absolute;
         content: "";
-        height: 26px;
-        width: 26px;
-        left: 4px;
-        bottom: 4px;
+        height: 22px;
+        width: 22px;
+        left: 1px;
+        bottom: 1px;
         background-color: white;
         -webkit-transition: 0.4s;
         transition: 0.4s;
+
+        border-radius: 30px;
+      }
+
+      .thumb-active {
+        box-shadow: 0 0 5px 5px #ffa7c4;
       }
 
       input:checked + .slider {
-        background-color: #2196f3;
+        background-color: var(--color-slider-active);
       }
 
       input:focus + .slider {
-        box-shadow: 0 0 1px #2196f3;
+        box-shadow: 0 0 1px var(--color-slider-active);
       }
 
-      input:checked + .slider:before {
+      input:checked + .slider > .thumb {
         -webkit-transform: translateX(26px);
         -ms-transform: translateX(26px);
         transform: translateX(26px);
@@ -107,7 +113,7 @@
 
       /* Rounded sliders */
       .slider.round {
-        border-radius: 34px;
+        border-radius: 30px;
       }
 
       .slider.round:before {
@@ -133,7 +139,9 @@
         <!-- Toggle to change theme. -->
         <label class="switch">
           <input class="theme-switch-input" type="checkbox" />
-          <span class="slider round"></span>
+          <span class="slider round">
+            <div class="thumb"></div>
+          </span>
         </label>
       </div>
 
@@ -173,6 +181,15 @@
       } else {
         document.documentElement.setAttribute("data-theme", "light");
       }
+    });
+
+    // Apply focus styling the slider thumb.
+    const thumb = document.querySelector(".thumb");
+    toggle.addEventListener("focus", () => {
+      thumb.classList.add("thumb-active");
+    });
+    toggle.addEventListener("focusout", () => {
+      thumb.classList.remove("thumb-active");
     });
   </script>
 </html>
