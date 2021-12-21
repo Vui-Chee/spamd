@@ -22,6 +22,7 @@ Options:
 	-p Port number (fixed port, otherwise a RANDOM port is supplied)
 	-t Display markdown HTML in "dark" or "light" theme. (default: light)
 	-c The style you want to apply to your code blocks. (default: monokai)
+	-nb Do not open browser if this is set true (default: false)
 
 Additionally, if you want to persist any of this configs, you can
 create a .mdpreview JSON file at your HOME directory containing:
@@ -42,8 +43,9 @@ var (
 
 	// These have default empty string values as ServiceConfig will supply
 	// the defaults.
-	theme     = flag.String("t", "", "theme")
-	codestyle = flag.String("c", "", "code block style")
+	theme     = flag.String("t", "", "Change light/dark theme.")
+	codestyle = flag.String("c", "", "Change the code block style.")
+	nobrowser = flag.Bool("nb", false, "Use this option to disable open browser on start.")
 )
 
 func main() {
@@ -66,7 +68,7 @@ func main() {
 		}
 	}
 
-	if (flag.NArg() >= 1 && sys.IsFileWithExt(filepath, ".md")) || sys.Exists(filepath) {
+	if !*nobrowser && ((flag.NArg() >= 1 && sys.IsFileWithExt(filepath, ".md")) || sys.Exists(filepath)) {
 		sys.Exec(browser.Commands(protocol + l.Addr().String() + "/" + filepath))
 	}
 
