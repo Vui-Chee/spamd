@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+
+	"github.com/vui-chee/mdpreview/internal/sys"
 )
 
 const (
@@ -14,46 +16,46 @@ const (
 	DEFAULT_CODESTYLE = "monokai"
 )
 
-func IsChromaTheme(theme string) bool {
-	themes := []string{
-		"abap",
-		"api",
-		"algol_nu",
-		"arduino",
-		"autumn",
-		"borland",
-		"bw",
-		"colorful",
-		"dracula",
-		"emacs",
-		"friendly",
-		"fruity",
-		"github",
-		"igor",
-		"lovelace",
-		"manni",
-		"monokai",
-		"monokailight",
-		"murphy",
-		"native",
-		"paraiso_dark",
-		"paraiso_light",
-		"pastie",
-		"perldoc",
-		"pygments",
-		"rainbow_dash",
-		"rrt",
-		"solarized_dark",
-		"solarized_dark256",
-		"solarized_light",
-		"swapoff",
-		"tango",
-		"trac",
-		"vim",
-		"vs",
-		"xcode",
-	}
+var themes = []string{
+	"abap",
+	"api",
+	"algol_nu",
+	"arduino",
+	"autumn",
+	"borland",
+	"bw",
+	"colorful",
+	"dracula",
+	"emacs",
+	"friendly",
+	"fruity",
+	"github",
+	"igor",
+	"lovelace",
+	"manni",
+	"monokai",
+	"monokailight",
+	"murphy",
+	"native",
+	"paraiso_dark",
+	"paraiso_light",
+	"pastie",
+	"perldoc",
+	"pygments",
+	"rainbow_dash",
+	"rrt",
+	"solarized_dark",
+	"solarized_dark256",
+	"solarized_light",
+	"swapoff",
+	"tango",
+	"trac",
+	"vim",
+	"vs",
+	"xcode",
+}
 
+func IsChromaTheme(theme string) bool {
 	for _, th := range themes {
 		if th == theme {
 			return true
@@ -63,10 +65,39 @@ func IsChromaTheme(theme string) bool {
 	return false
 }
 
+// TODO: make these fields private, only accessible by getters.
 type ServiceConfig struct {
 	Theme          string `json:"theme"`
 	CodeBlockTheme string `json:"codeblock"`
 	Port           int    `json:"port"` // Defaults to 0 if not set.
+}
+
+func (conf *ServiceConfig) SetTheme(theme string) {
+	if theme != LIGHT_THEME && theme != DARK_THEME {
+		return
+	}
+
+	conf.Theme = theme
+}
+
+func (conf *ServiceConfig) SetCodeBlockTheme(codeBlockStyle string) {
+	// User didn't supply option (default is "")
+	// This will default to `ServiceConfig` CodeBlockTheme default value.
+	if len(codeBlockStyle) == 0 {
+		return
+	}
+
+	if !IsChromaTheme(codeBlockStyle) {
+		message := "Unknown theme. The following styles are avalable:\n\n"
+		for _, th := range themes {
+			message += "	" + th + "\n"
+		}
+
+		sys.ErrorAndExit(message)
+		return
+	}
+
+	conf.CodeBlockTheme = codeBlockStyle
 }
 
 func ReadConfigFromFile(configFilename string) (*ServiceConfig, error) {

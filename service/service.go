@@ -78,6 +78,11 @@ func redirectIfNotMarkdown(path string) bool {
 	return true
 }
 
+func OverrideConfig(theme string, codeBlockStyle string) {
+	serviceConfig.SetTheme(theme)
+	serviceConfig.SetCodeBlockTheme(codeBlockStyle)
+}
+
 func Start(l net.Listener) {
 	watcher := NewFileWatcher()
 	mux := m.RegexpHandler{

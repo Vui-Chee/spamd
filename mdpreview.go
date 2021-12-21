@@ -22,7 +22,12 @@ const (
 
 // When applied, these value(s) will override as existing configuration.
 var (
-	p = flag.Int("p", -1, "port")
+	port = flag.Int("p", -1, "port")
+
+	// These have default empty string values as ServiceConfig will supply
+	// the defaults.
+	theme     = flag.String("t", "", "theme")
+	codestyle = flag.String("c", "", "code block style")
 )
 
 func main() {
@@ -31,9 +36,10 @@ func main() {
 	}
 
 	flag.Parse()
+	service.OverrideConfig(*theme, *codestyle)
 
 	var filepath string = defaultMarkdown
-	var l net.Listener = service.Listen(*p)
+	var l net.Listener = service.Listen(*port)
 	defer l.Close()
 
 	if flag.NArg() >= 1 {
