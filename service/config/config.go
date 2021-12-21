@@ -65,7 +65,6 @@ func IsChromaTheme(theme string) bool {
 	return false
 }
 
-// TODO: make these fields private, only accessible by getters.
 type ServiceConfig struct {
 	Theme          string `json:"theme"`
 	CodeBlockTheme string `json:"codeblock"`
