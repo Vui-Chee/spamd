@@ -164,8 +164,12 @@ func eventStreamFormat(data string) []byte {
 
 	var eventPayload string
 	dataLines := strings.Split(data, "\n")
+
 	for _, line := range dataLines {
-		if len(line) > 0 {
+		if len(line) == 0 {
+			// This is just a single newline.
+			eventPayload = eventPayload + "data: \n"
+		} else {
 			eventPayload = eventPayload + "data: " + line + "\n"
 		}
 	}
