@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/vui-chee/mdpreview/internal/sys"
+	conf "github.com/vui-chee/mdpreview/service/config"
 )
 
 type fileInfo struct {
@@ -34,7 +35,7 @@ func (f *FileWatcher) RefreshContent(w http.ResponseWriter, r *http.Request) {
 	// Get the path relative to the directory where the tool is run.
 	// '+1' to skip the leading '/'.
 	uri := r.URL.Path
-	filepath := uri[len("/refresh")+1:]
+	filepath := uri[len(conf.RefreshPrefix)+1:]
 
 	// Create a new channel for each connection.
 	singleChannel := make(chan string)

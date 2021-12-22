@@ -5,6 +5,8 @@ import (
 	"html/template"
 	"net/http"
 	"path"
+
+	conf "github.com/vui-chee/mdpreview/service/config"
 )
 
 var (
@@ -40,5 +42,10 @@ func serveHTML(w http.ResponseWriter, r *http.Request) {
 	t, _ = t.Parse(string(mainHTML))
 
 	w.Header().Set("Content-Type", "text/html")
-	t.Execute(w, map[string]string{"Filename": path.Base(r.URL.Path), "URI": r.URL.Path, "Theme": serviceConfig.Theme})
+	t.Execute(w, map[string]string{"Filename": path.Base(r.URL.Path),
+		"URI":           r.URL.Path,
+		"Theme":         serviceConfig.Theme,
+		"RefreshPrefix": conf.RefreshPrefix,
+		"StylesPrefix":  conf.StylesPrefix,
+	})
 }

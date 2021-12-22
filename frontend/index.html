@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <title>{{.Filename}}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="stylesheet" href="/styles" />
+    <link rel="stylesheet" href="{{.StylesPrefix}}" />
     <style>
       html {
         transition: color 0.2s ease-out, background 0.2s ease-out;
@@ -164,7 +164,7 @@
     }
 
     // Listen to server events using `EventSource`.
-    let eventListener = new EventSource("/refresh{{.URI}}");
+    let eventListener = new EventSource("{{.RefreshPrefix}}{{.URI}}");
     eventListener.onmessage = (event) => {
       let { data } = event;
       let contentDiv = document.querySelector(".markdown-body");

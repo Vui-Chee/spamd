@@ -8,7 +8,6 @@ import (
 	"os"
 	"regexp"
 
-	// "github.com/vui-chee/mdpreview/internal/common"
 	"github.com/vui-chee/mdpreview/internal/sys"
 	conf "github.com/vui-chee/mdpreview/service/config"
 	m "github.com/vui-chee/mdpreview/service/middleware"
@@ -17,10 +16,9 @@ import (
 const (
 	TOOL_NAME = "mdpreview"
 
-	// For matching url patterns (regex) to handler functions.
-	RefreshPattern = "^/refresh/.+"
-	StylesPattern  = "/styles"
-	AllElse        = "^/.+"
+	// Remaining unmatched routes go to default html handler.
+	// For other static routes, see config package.
+	AllElse = "^/.+"
 )
 
 // Set the configs for this service as a global,
@@ -66,8 +64,8 @@ func Start(l net.Listener) {
 	mux := m.RegexpHandler{
 		AdditionalCheck: redirectIfNotMarkdown,
 	}
-	mux.HandleFunc(StylesPattern, serveCSS)
-	mux.HandleFunc(RefreshPattern, watcher.RefreshContent)
+	mux.HandleFunc(conf.StylesPrefix, serveCSS)
+	mux.HandleFunc(conf.RefreshPattern(), watcher.RefreshContent)
 	mux.HandleFunc(AllElse, serveHTML)
 	wrapper := m.NewLogger(&mux)
 
@@ -79,15 +77,15 @@ func Start(l net.Listener) {
 }
 
 func redirectIfNotMarkdown(path string) bool {
-	if path == StylesPattern {
+	if path == conf.StylesPrefix {
 		return true
 	}
 
 	var uri string
-	refreshRegex, _ := regexp.Compile(RefreshPattern)
+	refreshRegex, _ := regexp.Compile(conf.RefreshPattern())
 	htmlRegex, _ := regexp.Compile(AllElse)
 	if refreshRegex.MatchString(path) {
-		uri = path[len("/refresh"):]
+		uri = path[len(conf.RefreshPrefix):]
 	} else if htmlRegex.MatchString(path) {
 		uri = path
 	}

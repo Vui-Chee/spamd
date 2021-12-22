@@ -66,6 +66,11 @@ func TestGetEmbeddedHTML(t *testing.T) {
 	// During testing, use this static testing folder instead.
 	f = testtools.MockFS
 
+	// Mock Service Config.
+	oldTheme := serviceConfig.Theme
+	serviceConfig.SetTheme("light")        // set test theme
+	defer serviceConfig.SetTheme(oldTheme) // Make sure to restore whatever theme.
+
 	req, err := http.NewRequest("GET", "/README.md", nil)
 	if err != nil {
 		t.Errorf("Error creating a new request: %v", err)
@@ -89,7 +94,10 @@ func TestGetEmbeddedHTML(t *testing.T) {
     <title>README.md</title>
   </head>
   <body>
-    <div class="app">/README.md</div><div>light</div>
+    <div class="app">/README.md</div>
+    <div>light</div>
+    <div>/__/refresh</div>
+    <div>/__/styles</div>
   </body>
 </html>
 `; got != want {
