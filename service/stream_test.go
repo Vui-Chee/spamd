@@ -25,16 +25,16 @@ func TestFormatStreamData(t *testing.T) {
 
 	expected := []string{
 		"",
-		"data: \ndata: \n\n",
-		"data: abc\n\n",
-		"data: abc\ndata: \n\n",
-		"data: abc\ndata: def\n\n",
-		"data: abc\ndata: def\ndata: \n\n",
+		"data:\ndata:\n\n",
+		"data:abc\n\n",
+		"data:abc\ndata:\n\n",
+		"data:abc\ndata:def\n\n",
+		"data:abc\ndata:def\ndata:\n\n",
 
-		"data: abc\ndata: \ndata: \n\n",
-		"data: abc\ndata: \ndata: def\n\n",
-		"data: abc\ndata: \ndata: \ndata: def\n\n",
-		"data: abc\ndata: \ndata: def\ndata: \n\n",
+		"data:abc\ndata:\ndata:\n\n",
+		"data:abc\ndata:\ndata:def\n\n",
+		"data:abc\ndata:\ndata:\ndata:def\n\n",
+		"data:abc\ndata:\ndata:def\ndata:\n\n",
 	}
 
 	for i, input := range inputs {

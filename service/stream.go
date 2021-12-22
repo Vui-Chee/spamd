@@ -168,9 +168,9 @@ func eventStreamFormat(data string) []byte {
 	for _, line := range dataLines {
 		if len(line) == 0 {
 			// This is just a single newline.
-			eventPayload = eventPayload + "data: \n"
+			eventPayload = eventPayload + "data:\n"
 		} else {
-			eventPayload = eventPayload + "data: " + line + "\n"
+			eventPayload = eventPayload + "data:" + line + "\n"
 		}
 	}
 
