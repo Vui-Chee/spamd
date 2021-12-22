@@ -30,7 +30,6 @@ func convertMarkdownToHTML(pathToMarkdown string) ([]byte, error) {
 			parser.WithAutoHeadingID(),
 		),
 		goldmark.WithRendererOptions(
-			html.WithHardWraps(),
 			html.WithUnsafe(),
 		),
 	)
