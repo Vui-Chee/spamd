@@ -56,6 +56,10 @@
 
       removeBulletPointsFromTaskListItem();
     };
+    eventListener.onerror = (event) => {
+      // Stop trying to contact server.
+      eventListener.close();
+    };
 
     const toggle = document.querySelector(".switch > input");
     toggle.addEventListener("click", () => {
