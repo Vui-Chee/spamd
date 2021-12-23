@@ -43,7 +43,7 @@ func OverrideConfig(theme string, codeBlockStyle string) {
 func Listen(port int) net.Listener {
 	var err error
 
-	if port == -1 {
+	if port == 0 {
 		port = serviceConfig.Port
 	}
 

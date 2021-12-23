@@ -25,7 +25,7 @@ Options:
 	-nb Do not open browser if this is set true (default: false)
 
 Additionally, if you want to persist any of this configs, you can
-create a .mdpreview JSON file at your HOME directory containing:
+create a .mdpreview JSON file at your ROOT directory containing:
 
 	{
 	  "theme": "dark",
@@ -39,7 +39,7 @@ This is just an example. You can change/omit any of the fields.
 
 // When applied, these value(s) will override as existing configuration.
 var (
-	port = flag.Int("p", -1, "port")
+	port = flag.Int("p", 0, "port")
 
 	// These have default empty string values as ServiceConfig will supply
 	// the defaults.
@@ -58,7 +58,6 @@ func main() {
 
 	var filepath string = defaultMarkdown
 	var l net.Listener = service.Listen(*port)
-	defer l.Close()
 
 	if flag.NArg() >= 1 {
 		filepath = flag.Args()[0]
