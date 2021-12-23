@@ -59,6 +59,10 @@
     eventListener.onerror = (event) => {
       // Stop trying to contact server.
       eventListener.close();
+
+      // Change content area with an error message saying the server is closed.
+      let contentDiv = document.querySelector(".markdown-body");
+      contentDiv.innerHTML = `The server has shutdown. Please reopen or refresh once a new server starts.`;
     };
 
     const toggle = document.querySelector(".switch > input");
