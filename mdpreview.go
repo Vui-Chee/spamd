@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"net"
 	"os"
 
 	"github.com/vui-chee/mdpreview/internal/browser"
@@ -57,7 +56,10 @@ func main() {
 	service.OverrideConfig(*theme, *codestyle)
 
 	var filepath string = defaultMarkdown
-	var l net.Listener = service.Listen(*port)
+	l, err := service.Listen(*port)
+	if err != nil {
+		sys.ErrorAndExit(err.Error())
+	}
 
 	if flag.NArg() >= 1 {
 		filepath = flag.Args()[0]

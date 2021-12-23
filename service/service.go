@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -40,23 +41,19 @@ func OverrideConfig(theme string, codeBlockStyle string) {
 	serviceConfig.SetCodeBlockTheme(codeBlockStyle)
 }
 
-func Listen(port int) net.Listener {
+func Listen(port int) (net.Listener, error) {
 	var err error
 
 	if port == 0 {
 		port = serviceConfig.Port
 	}
 
-	if err != nil {
-		sys.ErrorAndExit("Failed to get port.")
-	}
-
 	l, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", port))
 	if err != nil {
-		sys.ErrorAndExit(fmt.Sprintf("Failed to start server at %d.\n", port))
+		return nil, errors.New(fmt.Sprintf("Failed to start server at %d.\n", port))
 	}
 
-	return l
+	return l, nil
 }
 
 func Start(l net.Listener) {
