@@ -4,6 +4,8 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"strconv"
+	"strings"
 	"testing"
 
 	conf "github.com/vui-chee/mdpreview/service/config"
@@ -21,6 +23,23 @@ func TestListenReturnsErrOnInvalidPort(t *testing.T) {
 		if err == nil {
 			t.Errorf("Should return error if port == %d, Got: error == nil.\n", port)
 		}
+	}
+}
+
+func TestListenOnConfigPortOnZeroPort(t *testing.T) {
+	// Should default to serviceConfig port (if non-zero).
+	savedPort := serviceConfig.Port
+	defer func() {
+		serviceConfig.Port = savedPort
+	}()
+
+	wantPort := 5817
+	serviceConfig.Port = wantPort
+
+	l, _ := Listen(0)
+	gotPort, _ := strconv.Atoi(strings.SplitAfter(l.Addr().String(), ":")[1])
+	if gotPort != wantPort {
+		t.Errorf("service.Listen(0): want %d, got: %d\n", wantPort, gotPort)
 	}
 }
 
