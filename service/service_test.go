@@ -56,3 +56,24 @@ func TestRedirectOnNoSuchFile(t *testing.T) {
 		t.Errorf("redirectIfNotMarkdown(\"%s\") should return false.", uri)
 	}
 }
+
+func TestOverrideTheme(t *testing.T) {
+	savedTheme := serviceConfig.Theme
+	savedCodeStyle := serviceConfig.CodeBlockTheme
+
+	wantTheme := "dark"
+	wantCodestyle := "xcode"
+
+	OverrideConfig(wantTheme, wantCodestyle)
+	if serviceConfig.Theme != wantTheme {
+		t.Errorf("OverrideConfig() : want %s, got %s\n", wantTheme, serviceConfig.Theme)
+	}
+
+	if serviceConfig.CodeBlockTheme != wantCodestyle {
+		t.Errorf("OverrideConfig() : want %s, got %s\n", wantCodestyle, serviceConfig.CodeBlockTheme)
+	}
+
+	// reset configs
+	serviceConfig.SetTheme(savedTheme)
+	serviceConfig.SetCodeBlockTheme(savedCodeStyle)
+}
