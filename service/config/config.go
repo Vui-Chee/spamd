@@ -37,16 +37,16 @@ var themes = []string{
 	"monokailight",
 	"murphy",
 	"native",
-	"paraiso_dark",
-	"paraiso_light",
+	"paraiso-dark",
+	"paraiso-light",
 	"pastie",
 	"perldoc",
 	"pygments",
 	"rainbow_dash",
 	"rrt",
-	"solarized_dark",
-	"solarized_dark256",
-	"solarized_light",
+	"solarized-dark",
+	"solarized-dark256",
+	"solarized-light",
 	"swapoff",
 	"tango",
 	"trac",
@@ -87,7 +87,7 @@ func (conf *ServiceConfig) SetCodeBlockTheme(codeBlockStyle string) {
 	}
 
 	if !IsChromaTheme(codeBlockStyle) {
-		message := "Unknown theme. The following styles are avalable:\n\n"
+		message := "Unknown theme. The following styles are available:\n\n"
 		for _, th := range themes {
 			message += "	" + th + "\n"
 		}
