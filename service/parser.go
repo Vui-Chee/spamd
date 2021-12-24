@@ -3,6 +3,7 @@ package service
 import (
 	"bytes"
 	"os"
+	"sync"
 
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark-highlighting"
@@ -12,6 +13,8 @@ import (
 )
 
 var (
+	converterMutex sync.Mutex
+
 	// A function that transforms a sequence of bytes into
 	// markdown content.
 	converter = func(filedata []byte, content *bytes.Buffer) error {

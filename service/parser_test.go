@@ -28,14 +28,16 @@ func TestReturnErrorWhenConvertFails(t *testing.T) {
 
 	// Setup fake file and converter function.
 	file, _ := ioutil.TempFile(".", "*")
-	defer os.Remove(file.Name())
+	converterMutex.Lock()
 	savedConverter := converter
-	defer func() {
-		converter = savedConverter
-	}()
 	converter = func(filedata []byte, content *bytes.Buffer) error {
 		return wantError
 	}
+	defer func() {
+		os.Remove(file.Name())
+		converter = savedConverter
+		converterMutex.Unlock()
+	}()
 
 	_, err := convertMarkdownToHTML(file.Name())
 	if err == nil {

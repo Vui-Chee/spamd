@@ -174,9 +174,5 @@ func eventStreamFormat(data string) []byte {
 		}
 	}
 
-	if len(eventPayload) <= 0 {
-		return []byte("")
-	}
-
 	return []byte(eventPayload + "\n")
 }
