@@ -6,9 +6,16 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 
 	conf "github.com/vui-chee/mdpreview/service/config"
+)
+
+var (
+	// Tests are executed by goroutines and therefore should assume
+	// that concurrency concerns may arise.
+	confMu sync.Mutex
 )
 
 func TestListenReturnsErrOnInvalidPort(t *testing.T) {
@@ -27,10 +34,12 @@ func TestListenReturnsErrOnInvalidPort(t *testing.T) {
 }
 
 func TestListenOnConfigPortOnZeroPort(t *testing.T) {
+	confMu.Lock()
 	// Should default to serviceConfig port (if non-zero).
 	savedPort := serviceConfig.Port
 	defer func() {
 		serviceConfig.Port = savedPort
+		confMu.Unlock()
 	}()
 
 	wantPort := 5817
@@ -77,8 +86,15 @@ func TestRedirectOnNoSuchFile(t *testing.T) {
 }
 
 func TestOverrideTheme(t *testing.T) {
+	confMu.Lock()
 	savedTheme := serviceConfig.Theme
 	savedCodeStyle := serviceConfig.CodeBlockTheme
+	defer func() {
+		// reset configs
+		serviceConfig.SetTheme(savedTheme)
+		serviceConfig.SetCodeBlockTheme(savedCodeStyle)
+		confMu.Unlock()
+	}()
 
 	wantTheme := "dark"
 	wantCodestyle := "xcode"
@@ -92,7 +108,4 @@ func TestOverrideTheme(t *testing.T) {
 		t.Errorf("OverrideConfig() : want %s, got %s\n", wantCodestyle, serviceConfig.CodeBlockTheme)
 	}
 
-	// reset configs
-	serviceConfig.SetTheme(savedTheme)
-	serviceConfig.SetCodeBlockTheme(savedCodeStyle)
 }

@@ -4,12 +4,20 @@ import (
 	"embed"
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"testing"
 
 	testtools "github.com/vui-chee/mdpreview/internal/testing"
 )
 
-var x embed.FS = testtools.MockFS
+var (
+	x embed.FS = testtools.MockFS
+
+	// For locking shared FS during concurrent testing.
+	// Although not required (since we are only dealing with concurrent reads)...
+	// , you have to remind yourself in the future.
+	fsMutex sync.Mutex
+)
 
 func init() {
 	// Use this mock testing folder
@@ -17,6 +25,9 @@ func init() {
 }
 
 func TestGetEmbeddedCSS(t *testing.T) {
+	fsMutex.Lock()
+	defer fsMutex.Unlock()
+
 	// During testing, use this static testing folder instead.
 	f = testtools.MockFS
 
@@ -63,6 +74,8 @@ func TestServeCSS_ErrOnMissingFS(t *testing.T) {
 }
 
 func TestGetEmbeddedHTML(t *testing.T) {
+	fsMutex.Lock()
+	defer fsMutex.Unlock()
 	// During testing, use this static testing folder instead.
 	f = testtools.MockFS
 
