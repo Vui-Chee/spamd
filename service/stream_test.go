@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"io/ioutil"
+	"net/http/httptest"
 	"os"
 	"reflect"
 	"testing"
@@ -95,5 +96,25 @@ func TestErrorDuringRead(t *testing.T) {
 	err := readAndSendMarkdown(nil, file.Name())
 	if err != wantError {
 		t.Errorf("got %s; want %s", err, wantError)
+	}
+}
+
+func TestWriteContentAsDataPacket(t *testing.T) {
+	file, _ := ioutil.TempFile(".", "*")
+	file.WriteString("# Header")
+	defer os.Remove(file.Name())
+
+	rr := httptest.NewRecorder()
+	readAndSendMarkdown(rr, file.Name())
+	if !rr.Flushed {
+		t.Error("Should have flushed.")
+	}
+
+	want := `data:<h1 id="header">Header</h1>
+data:
+
+`
+	if rr.Body.String() != want {
+		t.Errorf("got %s; want %s", rr.Body.String(), want)
 	}
 }
