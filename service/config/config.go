@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
-
-	"github.com/vui-chee/mdpreview/internal/sys"
 )
 
 const (
@@ -14,6 +12,20 @@ const (
 
 	DEFAULT           = LIGHT_THEME
 	DEFAULT_CODESTYLE = "monokai"
+
+	invalid_config_error = `The Json config file is poorly formatted.
+Please check your config file again.
+
+An example config file would look as such:
+{
+	"theme": "dark",
+	"codeblock": "monokai",
+	"port": 3000
+}
+
+NOTE: the last line does not have a trailing comma.
+
+`
 )
 
 var themes = []string{
@@ -79,11 +91,11 @@ func (conf *ServiceConfig) SetTheme(theme string) {
 	conf.Theme = theme
 }
 
-func (conf *ServiceConfig) SetCodeBlockTheme(codeBlockStyle string) {
+func (conf *ServiceConfig) SetCodeBlockTheme(codeBlockStyle string) error {
 	// User didn't supply option (default is "")
 	// This will default to `ServiceConfig` CodeBlockTheme default value.
 	if len(codeBlockStyle) == 0 {
-		return
+		return nil
 	}
 
 	if !IsChromaTheme(codeBlockStyle) {
@@ -92,11 +104,11 @@ func (conf *ServiceConfig) SetCodeBlockTheme(codeBlockStyle string) {
 			message += "	" + th + "\n"
 		}
 
-		sys.ErrorAndExit(message)
-		return
+		return errors.New(message)
 	}
 
 	conf.CodeBlockTheme = codeBlockStyle
+	return nil
 }
 
 func ReadConfigFromFile(configFilename string) (*ServiceConfig, error) {
@@ -119,19 +131,7 @@ func ReadConfigFromFile(configFilename string) (*ServiceConfig, error) {
 	// Read whatever json fields into config variable.
 	var conf ServiceConfig
 	if err := json.Unmarshal(data, &conf); err != nil {
-		return nil, errors.New(`The Json config file is poorly formatted.
-Please check your config file again.
-
-An example config file would look as such:
-{
-	"theme": "dark",
-	"codeblock": "monokai",
-	"port": 3000
-}
-
-NOTE: the last line does not have a trailing comma.
-
-` + err.Error())
+		return nil, errors.New(invalid_config_error + err.Error())
 	}
 
 	if conf.Theme == "" {

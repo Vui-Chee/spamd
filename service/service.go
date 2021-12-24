@@ -38,7 +38,10 @@ func init() {
 
 func OverrideConfig(theme string, codeBlockStyle string) {
 	serviceConfig.SetTheme(theme)
-	serviceConfig.SetCodeBlockTheme(codeBlockStyle)
+	err := serviceConfig.SetCodeBlockTheme(codeBlockStyle)
+	if err != nil {
+		sys.ErrorAndExit(err.Error())
+	}
 }
 
 func Listen(port int) (net.Listener, error) {
