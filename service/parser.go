@@ -11,31 +11,38 @@ import (
 	"github.com/yuin/goldmark/renderer/html"
 )
 
+var (
+	// A function that transforms a sequence of bytes into
+	// markdown content.
+	converter = func(filedata []byte, content *bytes.Buffer) error {
+		md := goldmark.New(
+			goldmark.WithExtensions(
+				extension.GFM,
+				extension.TaskList,
+				highlighting.NewHighlighting(
+					highlighting.WithStyle(serviceConfig.CodeBlockTheme), // Code highlight colors
+				),
+			),
+			goldmark.WithParserOptions(
+				parser.WithAutoHeadingID(),
+			),
+			goldmark.WithRendererOptions(
+				html.WithUnsafe(),
+			),
+		)
+
+		return md.Convert(filedata, content)
+	}
+)
+
 func convertMarkdownToHTML(pathToMarkdown string) ([]byte, error) {
 	filedata, err := os.ReadFile(pathToMarkdown)
 	if err != nil {
 		return nil, err
 	}
 
-	// Add more parsing options
-	md := goldmark.New(
-		goldmark.WithExtensions(
-			extension.GFM,
-			extension.TaskList,
-			highlighting.NewHighlighting(
-				highlighting.WithStyle(serviceConfig.CodeBlockTheme), // Code highlight colors
-			),
-		),
-		goldmark.WithParserOptions(
-			parser.WithAutoHeadingID(),
-		),
-		goldmark.WithRendererOptions(
-			html.WithUnsafe(),
-		),
-	)
-
 	var content bytes.Buffer
-	if err := md.Convert(filedata, &content); err != nil {
+	if err := converter(filedata, &content); err != nil {
 		return nil, err
 	}
 
