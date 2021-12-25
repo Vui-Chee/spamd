@@ -4,10 +4,14 @@ import (
 	"bytes"
 	"errors"
 	"io/ioutil"
+	"net/http"
 	"net/http/httptest"
 	"os"
 	"reflect"
 	"testing"
+	"time"
+
+	conf "github.com/vui-chee/mdpreview/service/config"
 )
 
 func TestConstructFileWatcher(t *testing.T) {
@@ -116,5 +120,62 @@ data:
 `
 	if rr.Body.String() != want {
 		t.Errorf("got %s; want %s", rr.Body.String(), want)
+	}
+}
+
+func TestGetFirstPageOnConnect(t *testing.T) {
+	file, _ := ioutil.TempFile(".", "*")
+	file.WriteString(`# First Page
+
+An example tranformation of markdown contents into
+actual HTML.
+
+## Contents
+`)
+	defer os.Remove(file.Name())
+
+	watcher := NewFileWatcher()
+	watcher.loops = 1
+
+	// file.Name() returns "./{uri}", skip first dot.
+	resourceUri := conf.RefreshPrefix + file.Name()[1:]
+
+	req, err := http.NewRequest("GET", resourceUri, nil)
+	if err != nil {
+		t.Errorf("Error creating a new request: %v", err)
+	}
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(watcher.RefreshContent)
+
+	go func() {
+		for channel := range watcher.messageChannels {
+			channel <- time.Now().String()
+		}
+	}()
+
+	handler.ServeHTTP(rr, req)
+
+	// Read from byte stream.
+	got := make([]byte, 200)
+	_, err = rr.Result().Body.Read(got)
+	if err != nil {
+		t.Errorf("Error reading from event stream: %s", err)
+	}
+
+	want := `data:<h1 id="first-page">First Page</h1>
+data:<p>An example tranformation of markdown contents into
+data:actual HTML.</p>
+data:<h2 id="contents">Contents</h2>
+data:
+
+`
+
+	if !rr.Flushed {
+		t.Error("Expected flushed.")
+	}
+
+	if string(got)[:len(want)] != want {
+		t.Errorf("got %s; want %s", string(got), want)
 	}
 }

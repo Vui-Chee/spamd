@@ -12,6 +12,10 @@ import (
 	conf "github.com/vui-chee/mdpreview/service/config"
 )
 
+const (
+	ENDLESS_LOOP = -1
+)
+
 type fileInfo struct {
 	Lastmodifed time.Time
 	Count       int
@@ -29,6 +33,8 @@ type FileWatcher struct {
 	// simple use case where only one user read/writes to markdown file,
 	// it is not required to have a performant locking mechanism.
 	lock sync.Mutex
+
+	loops int
 }
 
 func (f *FileWatcher) RefreshContent(w http.ResponseWriter, r *http.Request) {
@@ -53,7 +59,7 @@ func (f *FileWatcher) RefreshContent(w http.ResponseWriter, r *http.Request) {
 		} else {
 			f.trackFiles[filepath] = &fileInfo{
 				Count:       1,
-				Lastmodifed: time.Now(),
+				Lastmodifed: time.Time{}, // trigger the first page
 			}
 		}
 	}()
@@ -62,13 +68,11 @@ func (f *FileWatcher) RefreshContent(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
-	// First time create channel, also sent first page.
-	if err := readAndSendMarkdown(w, filepath); err != nil {
-		log.Fatalln(err)
-		return
-	}
+	for f.loops == ENDLESS_LOOP || f.loops > 0 {
+		if f.loops > 0 {
+			f.loops--
+		}
 
-	for {
 		select {
 		case <-singleChannel:
 			if err := readAndSendMarkdown(w, filepath); err != nil {
@@ -135,6 +139,8 @@ func NewFileWatcher() *FileWatcher {
 		trackFiles:      make(map[string]*fileInfo),
 		messageChannels: make(map[chan string]string),
 		lock:            sync.Mutex{},
+
+		loops: ENDLESS_LOOP,
 	}
 }
 
