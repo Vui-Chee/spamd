@@ -2,8 +2,6 @@ name: Test
 
 on:
   push:
-    branches:
-      - master
     paths-ignore:
       - "README.md"
 
@@ -23,6 +21,8 @@ jobs:
 
       - name: Install dependencies
         run: go get -d -u -v ./...
+
+      - name: Install gotest
         run: curl https://gotest-release.s3.amazonaws.com/gotest_linux > gotest && chmod +x gotest
 
       - name: Run tests
