@@ -19,7 +19,7 @@ func TestConstructFileWatcher(t *testing.T) {
 	var want string
 	var got string
 
-	watcher := NewFileWatcher()
+	watcher := NewFileWatcher(false)
 	if watcher == nil {
 		t.Error("got <nil>; want &FileWatcher{}")
 	}
@@ -135,12 +135,10 @@ actual HTML.
 `)
 	defer os.Remove(file.Name())
 
-	watcher := NewFileWatcher()
-	watcher.loops = 1
+	watcher := NewFileWatcher(true)
 
 	// file.Name() returns "./{uri}", skip first dot.
 	resourceUri := conf.RefreshPrefix + file.Name()[1:]
-
 	req, err := http.NewRequest("GET", resourceUri, nil)
 	if err != nil {
 		t.Errorf("Error creating a new request: %v", err)
@@ -192,18 +190,13 @@ actual HTML.
 
 	defer os.Remove(file.Name())
 
-	watcher := NewFileWatcher()
-	// Run once to create and start listening to channel.
-	watcher.loops = 1
-
+	watcher := NewFileWatcher(true)
 	// file.Name() returns "./{uri}", skip first dot.
 	resourceUri := conf.RefreshPrefix + file.Name()[1:]
-
 	req, err := http.NewRequest("GET", resourceUri, nil)
 	if err != nil {
 		t.Errorf("Error creating a new request: %v", err)
 	}
-
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(watcher.RefreshContent)
 
@@ -214,13 +207,14 @@ actual HTML.
 	// Please ensure no other processes/threads are modifying the test file.
 	// Otherwise, you may get cases where the test sometimes pass/fail (flaky).
 	watcher.Watch()
-	watcher.testmode = true
 
-	watcher.wg.Add(1)
+	// Wait for main loop to decrement.
+	watcher.harness.useWaitGroup = true
+	watcher.harness.Incr()
+
 	// Now write to file.
 	go func() {
-		// Wait for main loop to write to channel.
-		watcher.wg.Wait()
+		watcher.harness.wg.Wait()
 		file.WriteString("### new content")
 	}()
 
@@ -244,7 +238,7 @@ data:
 
 `
 	// Read from byte stream.
-	got := make([]byte, len(want)+10)
+	got := make([]byte, len(want))
 	_, err = rr.Result().Body.Read(got)
 	if err != nil {
 		t.Errorf("Error reading from event stream: %s", err)
@@ -259,18 +253,18 @@ data:
 	}
 
 	// Stop watching after test.
-	watcher.stopWatching <- true
+	watcher.harness.stopWatching <- true
 }
 
 func TestCloseConnection(t *testing.T) {
 	file, _ := ioutil.TempFile(".", "*")
 	defer os.Remove(file.Name())
 
-	watcher := NewFileWatcher()
-	watcher.loops = 1
+	watcher := NewFileWatcher(true)
 
 	ctx, cancel := context.WithTimeout(context.TODO(), 100*time.Millisecond)
-	defer cancel()
+	// Cancel request immdiately.
+	cancel()
 
 	req, err := http.NewRequestWithContext(ctx, "GET", conf.RefreshPrefix+file.Name()[1:], nil)
 	if err != nil {

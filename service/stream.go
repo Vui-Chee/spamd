@@ -12,9 +12,36 @@ import (
 	conf "github.com/vui-chee/mdpreview/service/config"
 )
 
-const (
-	ENDLESS_LOOP = -1
-)
+// This struct is used to store all information used during testing.
+type testHarness struct {
+	// Used in testing to control number of iterations of main listener loop.
+	loops int
+	// Use to stop the goroutine during testing, otherwise it will keep running
+	// during running test process.
+	stopWatching chan bool
+	// Currently used to wait for main loop (RefreshContent) to start before
+	// writing to test file.
+	wg *sync.WaitGroup
+	// Determine whether to use wg or not.
+	useWaitGroup bool
+}
+
+func (h *testHarness) Incr() {
+	h.wg.Add(1)
+}
+
+func (h *testHarness) Decr() {
+	h.wg.Done()
+}
+
+func NewTestHarness() testHarness {
+	return testHarness{
+		loops:        1,
+		stopWatching: make(chan bool),
+		wg:           &sync.WaitGroup{},
+		useWaitGroup: false,
+	}
+}
 
 type fileInfo struct {
 	Lastmodifed time.Time
@@ -34,14 +61,8 @@ type FileWatcher struct {
 	// it is not required to have a performant locking mechanism.
 	lock sync.Mutex
 
-	// Used in testing to control number of iterations of main listener loop.
-	loops int
-	// Use to stop the gorouting during testing, otherwise it will keep running
-	// during running test process.
-	stopWatching chan bool
-
-	testmode bool // whether in test testmode
-	wg       *sync.WaitGroup
+	// Initialized during testing.
+	harness testHarness
 }
 
 func (f *FileWatcher) RefreshContent(w http.ResponseWriter, r *http.Request) {
@@ -83,15 +104,12 @@ func (f *FileWatcher) RefreshContent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if f.testmode {
-		f.wg.Done()
+	// Indicates test can start writing to file.
+	if f.harness.useWaitGroup {
+		f.harness.Decr()
 	}
 
-	for f.loops == ENDLESS_LOOP || f.loops > 0 {
-		if f.loops > 0 {
-			f.loops--
-		}
-
+	for {
 		select {
 		case <-singleChannel:
 			if err := readAndSendMarkdown(w, filepath); err != nil {
@@ -116,6 +134,14 @@ func (f *FileWatcher) RefreshContent(w http.ResponseWriter, r *http.Request) {
 			log.Println("User closed tab. This connection is closed.")
 			return
 		}
+
+		// Used during testing only.
+		if f.harness.loops > 0 {
+			f.harness.loops--
+			if f.harness.loops == 0 {
+				break
+			}
+		}
 	}
 }
 
@@ -123,7 +149,7 @@ func (f *FileWatcher) Watch() {
 	go func() {
 		for {
 			select {
-			case <-f.stopWatching:
+			case <-f.harness.stopWatching:
 				return
 			default:
 				time.Sleep(300 * time.Millisecond) // 0.3s
@@ -158,15 +184,21 @@ func (f *FileWatcher) Watch() {
 	}()
 }
 
-func NewFileWatcher() *FileWatcher {
+func NewFileWatcher(useHarness bool) *FileWatcher {
+	if useHarness {
+		return &FileWatcher{
+			trackFiles:      make(map[string]*fileInfo),
+			messageChannels: make(map[chan string]string),
+			lock:            sync.Mutex{},
+
+			harness: NewTestHarness(),
+		}
+	}
+
 	return &FileWatcher{
 		trackFiles:      make(map[string]*fileInfo),
 		messageChannels: make(map[chan string]string),
 		lock:            sync.Mutex{},
-
-		loops:        ENDLESS_LOOP,
-		stopWatching: make(chan bool),
-		wg:           &sync.WaitGroup{},
 	}
 }
 

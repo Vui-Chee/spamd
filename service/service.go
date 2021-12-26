@@ -60,7 +60,7 @@ func Listen(port int) (net.Listener, error) {
 }
 
 func Start(l net.Listener) {
-	watcher := NewFileWatcher()
+	watcher := NewFileWatcher(false)
 	mux := m.RegexpHandler{
 		AdditionalCheck: redirectIfNotMarkdown,
 	}
