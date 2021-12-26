@@ -36,6 +36,9 @@ type FileWatcher struct {
 
 	// Used in testing to control number of iterations of main listener loop.
 	loops int
+	// Use to stop the gorouting during testing, otherwise it will keep running
+	// during running test process.
+	stopWatching chan bool
 }
 
 func (f *FileWatcher) RefreshContent(w http.ResponseWriter, r *http.Request) {
@@ -55,12 +58,14 @@ func (f *FileWatcher) RefreshContent(w http.ResponseWriter, r *http.Request) {
 		// to filter channels by file that has been modified.
 		f.messageChannels[singleChannel] = filepath
 
+		modtime, _ := sys.Modtime(filepath)
+
 		if _, ok := f.trackFiles[filepath]; ok {
 			f.trackFiles[filepath].Count++
 		} else {
 			f.trackFiles[filepath] = &fileInfo{
 				Count:       1,
-				Lastmodifed: time.Time{}, // trigger the first page
+				Lastmodifed: modtime,
 			}
 		}
 	}()
@@ -68,6 +73,12 @@ func (f *FileWatcher) RefreshContent(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Connection", "keep-alive")
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	// Read first page
+	if err := readAndSendMarkdown(w, filepath); err != nil {
+		log.Fatalln(err)
+		return
+	}
 
 	for f.loops == ENDLESS_LOOP || f.loops > 0 {
 		if f.loops > 0 {
@@ -104,33 +115,38 @@ func (f *FileWatcher) RefreshContent(w http.ResponseWriter, r *http.Request) {
 func (f *FileWatcher) Watch() {
 	go func() {
 		for {
-			time.Sleep(300 * time.Millisecond) // 0.3s
+			select {
+			case <-f.stopWatching:
+				return
+			default:
+				time.Sleep(300 * time.Millisecond) // 0.3s
 
-			func() {
-				f.lock.Lock()
-				defer f.lock.Unlock()
+				func() {
+					f.lock.Lock()
+					defer f.lock.Unlock()
 
-				for filepath, info := range f.trackFiles {
-					newModtime, err := sys.Modtime(filepath)
-					if err != nil {
-						log.Fatal(err)
-						continue
-					}
+					for filepath, info := range f.trackFiles {
+						newModtime, err := sys.Modtime(filepath)
+						if err != nil {
+							log.Fatal(err)
+							continue
+						}
 
-					if info.Lastmodifed != newModtime {
-						fmt.Println("File was modified at: ", time.Now().Local())
+						if info.Lastmodifed != newModtime {
+							fmt.Printf("%s was modified at: %s\n", filepath, time.Now().Local())
 
-						info.Lastmodifed = newModtime // update modified time
+							info.Lastmodifed = newModtime // update modified time
 
-						for messageChannel, channelPath := range f.messageChannels {
-							// Only write to channels belonging to filepath.
-							if filepath == channelPath {
-								messageChannel <- newModtime.String()
+							for messageChannel, channelPath := range f.messageChannels {
+								// Only write to channels belonging to filepath.
+								if filepath == channelPath {
+									messageChannel <- newModtime.String()
+								}
 							}
 						}
 					}
-				}
-			}()
+				}()
+			}
 		}
 	}()
 }
@@ -141,7 +157,8 @@ func NewFileWatcher() *FileWatcher {
 		messageChannels: make(map[chan string]string),
 		lock:            sync.Mutex{},
 
-		loops: ENDLESS_LOOP,
+		loops:        ENDLESS_LOOP,
+		stopWatching: make(chan bool),
 	}
 }
 
