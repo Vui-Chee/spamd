@@ -2,6 +2,7 @@ package service
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"sync"
 
@@ -41,7 +42,7 @@ var (
 func convertMarkdownToHTML(pathToMarkdown string) ([]byte, error) {
 	filedata, err := os.ReadFile(pathToMarkdown)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Error reading %s: %s", pathToMarkdown, err)
 	}
 
 	var content bytes.Buffer
