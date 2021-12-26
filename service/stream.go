@@ -34,6 +34,7 @@ type FileWatcher struct {
 	// it is not required to have a performant locking mechanism.
 	lock sync.Mutex
 
+	// Used in testing to control number of iterations of main listener loop.
 	loops int
 }
 
