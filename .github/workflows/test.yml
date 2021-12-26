@@ -19,6 +19,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
+      - name: Create mock `build` folder
+        run: mkdir -p service/build
+
       - name: Install dependencies
         run: go get -d -u -v ./...
 
