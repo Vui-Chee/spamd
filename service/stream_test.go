@@ -131,7 +131,7 @@ func TestGetFirstPageOnConnect(t *testing.T) {
 An example tranformation of markdown contents into
 actual HTML.
 
-## Contents
+## XYZ
 `)
 	defer os.Remove(file.Name())
 
@@ -167,7 +167,7 @@ actual HTML.
 	want := `data:<h1 id="first-page">First Page</h1>
 data:<p>An example tranformation of markdown contents into
 data:actual HTML.</p>
-data:<h2 id="contents">Contents</h2>
+data:<h2 id="xyz">XYZ</h2>
 data:
 `
 
@@ -189,6 +189,7 @@ actual HTML.
 
 ## Contents
 `)
+
 	defer os.Remove(file.Name())
 
 	watcher := NewFileWatcher()
@@ -220,13 +221,9 @@ actual HTML.
 
 	handler.ServeHTTP(rr, req)
 
-	// Read from byte stream.
-	got := make([]byte, 300)
-	_, err = rr.Result().Body.Read(got)
-	if err != nil {
-		t.Errorf("Error reading from event stream: %s", err)
-	}
-
+	// The first write happens after first connection opens.
+	// The second write occurs when the watcher reads the file
+	// change and triggers the next read.
 	want := `data:<h1 id="first-page">First Page</h1>
 data:<p>An example tranformation of markdown contents into
 data:actual HTML.</p>
@@ -234,13 +231,26 @@ data:<h2 id="contents">Contents</h2>
 data:<h3 id="new-content">new content</h3>
 data:
 
+data:<h1 id="first-page">First Page</h1>
+data:<p>An example tranformation of markdown contents into
+data:actual HTML.</p>
+data:<h2 id="contents">Contents</h2>
+data:<h3 id="new-content">new content</h3>
+data:
+
 `
+	// Read from byte stream.
+	got := make([]byte, len(want))
+	_, err = rr.Result().Body.Read(got)
+	if err != nil {
+		t.Errorf("Error reading from event stream: %s", err)
+	}
 
 	if !rr.Flushed {
 		t.Error("Expected flushed.")
 	}
 
-	if string(got)[:len(want)] != want {
+	if string(got[:len(want)]) != want {
 		t.Errorf("got %s; want %s", string(got), want)
 	}
 
