@@ -39,6 +39,9 @@ type FileWatcher struct {
 	// Use to stop the gorouting during testing, otherwise it will keep running
 	// during running test process.
 	stopWatching chan bool
+
+	testmode bool // whether in test testmode
+	wg       *sync.WaitGroup
 }
 
 func (f *FileWatcher) RefreshContent(w http.ResponseWriter, r *http.Request) {
@@ -78,6 +81,10 @@ func (f *FileWatcher) RefreshContent(w http.ResponseWriter, r *http.Request) {
 	if err := readAndSendMarkdown(w, filepath); err != nil {
 		log.Fatalln(err)
 		return
+	}
+
+	if f.testmode {
+		f.wg.Done()
 	}
 
 	for f.loops == ENDLESS_LOOP || f.loops > 0 {
@@ -159,6 +166,7 @@ func NewFileWatcher() *FileWatcher {
 
 		loops:        ENDLESS_LOOP,
 		stopWatching: make(chan bool),
+		wg:           &sync.WaitGroup{},
 	}
 }
 

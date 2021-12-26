@@ -180,6 +180,88 @@ data:
 	}
 }
 
+func TestUpdateContentOnWrite(t *testing.T) {
+	file, _ := ioutil.TempFile(".", "*")
+	file.WriteString(`# First Page
+
+An example tranformation of markdown contents into
+actual HTML.
+
+## Contents
+`)
+
+	defer os.Remove(file.Name())
+
+	watcher := NewFileWatcher()
+	// Run once to create and start listening to channel.
+	watcher.loops = 1
+
+	// file.Name() returns "./{uri}", skip first dot.
+	resourceUri := conf.RefreshPrefix + file.Name()[1:]
+
+	req, err := http.NewRequest("GET", resourceUri, nil)
+	if err != nil {
+		t.Errorf("Error creating a new request: %v", err)
+	}
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(watcher.RefreshContent)
+
+	// Start watching the files in the current directory.
+	// In this case, the service folder.
+	//
+	// NOTE:
+	// Please ensure no other processes/threads are modifying the test file.
+	// Otherwise, you may get cases where the test sometimes pass/fail (flaky).
+	watcher.Watch()
+	watcher.testmode = true
+
+	watcher.wg.Add(1)
+	// Now write to file.
+	go func() {
+		// Wait for main loop to write to channel.
+		watcher.wg.Wait()
+		file.WriteString("### new content")
+	}()
+
+	handler.ServeHTTP(rr, req)
+
+	// The first write happens after first connection opens.
+	// The second write occurs when the watcher reads the file
+	// change and triggers the next read.
+	want := `data:<h1 id="first-page">First Page</h1>
+data:<p>An example tranformation of markdown contents into
+data:actual HTML.</p>
+data:<h2 id="contents">Contents</h2>
+data:
+
+data:<h1 id="first-page">First Page</h1>
+data:<p>An example tranformation of markdown contents into
+data:actual HTML.</p>
+data:<h2 id="contents">Contents</h2>
+data:<h3 id="new-content">new content</h3>
+data:
+
+`
+	// Read from byte stream.
+	got := make([]byte, len(want)+10)
+	_, err = rr.Result().Body.Read(got)
+	if err != nil {
+		t.Errorf("Error reading from event stream: %s", err)
+	}
+
+	if !rr.Flushed {
+		t.Error("Expected flushed.")
+	}
+
+	if string(got[:len(want)]) != want {
+		t.Errorf("got %s; want %s", string(got), want)
+	}
+
+	// Stop watching after test.
+	watcher.stopWatching <- true
+}
+
 func TestCloseConnection(t *testing.T) {
 	file, _ := ioutil.TempFile(".", "*")
 	defer os.Remove(file.Name())
