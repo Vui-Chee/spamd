@@ -2,6 +2,7 @@ package service
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"io/ioutil"
 	"net/http"
@@ -168,7 +169,6 @@ data:<p>An example tranformation of markdown contents into
 data:actual HTML.</p>
 data:<h2 id="contents">Contents</h2>
 data:
-
 `
 
 	if !rr.Flushed {
@@ -214,7 +214,9 @@ actual HTML.
 	// Otherwise, you may get cases where the test sometimes pass/fail (flaky).
 	watcher.Watch()
 	// Now write to file.
-	file.WriteString("### new content")
+	go func() {
+		file.WriteString("### new content")
+	}()
 
 	handler.ServeHTTP(rr, req)
 
@@ -240,5 +242,35 @@ data:
 
 	if string(got)[:len(want)] != want {
 		t.Errorf("got %s; want %s", string(got), want)
+	}
+
+	// Stop watching after test.
+	watcher.stopWatching <- true
+}
+
+func TestCloseConnection(t *testing.T) {
+	file, _ := ioutil.TempFile(".", "*")
+	defer os.Remove(file.Name())
+
+	watcher := NewFileWatcher()
+	watcher.loops = 1
+
+	ctx, cancel := context.WithTimeout(context.TODO(), 100*time.Millisecond)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, "GET", conf.RefreshPrefix+file.Name()[1:], nil)
+	if err != nil {
+		t.Errorf("Error creating a new request: %v", err)
+	}
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(watcher.RefreshContent)
+
+	handler.ServeHTTP(rr, req)
+
+	select {
+	case <-ctx.Done():
+		// If success close.
+	default:
+		t.Error("Failed to close conn.")
 	}
 }
