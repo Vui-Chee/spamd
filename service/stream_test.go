@@ -4,11 +4,13 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"reflect"
+	"sync"
 	"testing"
 	"time"
 
@@ -207,31 +209,46 @@ actual HTML.
 	}
 }
 
-func TestWatcherTriggersChannelOnWrite(t *testing.T) {
-	file, _ := ioutil.TempFile(".", "*")
-	info, _ := os.Lstat(file.Name())
-	defer os.Remove(file.Name())
+func TestWithoutWaitgroup(t *testing.T) {
+	testCh := make(chan string)
 
-	watcher := NewFileWatcher(true)
-	// messageChannels
-	testChannel := make(chan string)
-	watcher.messageChannels[testChannel] = file.Name()
-	// trackFiles
-	watcher.trackFiles[file.Name()] = &fileInfo{
-		Count:       1,
-		Lastmodifed: info.ModTime(),
+	go func() {
+		for {
+			time.Sleep(300 * time.Millisecond)
+			testCh <- "123" // Also blocks till its received
+		}
+	}()
+
+	// Now listen on channel
+	got := <-testCh
+	if got != "123" {
+		t.Errorf("got %s; want 123", got)
 	}
+}
 
-	watcher.Watch(func() {})
+func TestWriteToChannel(t *testing.T) {
+	var wg *sync.WaitGroup = new(sync.WaitGroup)
 
-	// Now write to file.
-	file.WriteString("Write content to file")
+	testCh := make(chan string)
 
-	latest, _ := os.Lstat(file.Name())
-	want := latest.ModTime().String()
-	got := <-testChannel
-	if got != want {
-		t.Errorf("got %s; want %s", got, want)
+	wg.Add(1)
+
+	go func() {
+		for {
+			time.Sleep(300 * time.Millisecond)
+			wg.Done()
+			testCh <- "123" // Also blocks till its received
+		}
+	}()
+
+	wg.Wait()
+
+	fmt.Println("Listening on channel")
+
+	// Now listen on channel
+	got := <-testCh
+	if got != "123" {
+		t.Errorf("got %s; want 123", got)
 	}
 }
 
