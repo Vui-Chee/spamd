@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"reflect"
+	"sync"
 	"testing"
 	"time"
 
@@ -204,6 +205,42 @@ actual HTML.
 		if osInfo.ModTime() != info.Lastmodifed {
 			t.Errorf("got %s; want %s", info.Lastmodifed, osInfo.ModTime())
 		}
+	}
+}
+
+func TestWatcherTriggersChannelOnWrite(t *testing.T) {
+	file, _ := ioutil.TempFile(".", "*")
+	info, _ := os.Lstat(file.Name())
+	defer os.Remove(file.Name())
+
+	// Must be a pointer since it's passed into a
+	// function inside Watch().
+	var wg *sync.WaitGroup = new(sync.WaitGroup)
+	wg.Add(1)
+
+	watcher := NewFileWatcher(true)
+	// messageChannels
+	testChannel := make(chan string)
+	watcher.messageChannels[testChannel] = file.Name()
+	// trackFiles
+	watcher.trackFiles[file.Name()] = &fileInfo{
+		Count:       1,
+		Lastmodifed: info.ModTime(),
+	}
+
+	watcher.Watch(func() {
+		wg.Done()
+	}) // runs a goroutine
+
+	// Now write to file.
+	file.WriteString("Write content to file")
+	wg.Wait()
+
+	latest, _ := os.Lstat(file.Name())
+	want := latest.ModTime().String()
+	got := <-testChannel
+	if got != want {
+		t.Errorf("got %s; want %s", got, want)
 	}
 }
 
