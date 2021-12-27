@@ -9,7 +9,6 @@ import (
 	"net/http/httptest"
 	"os"
 	"reflect"
-	"sync"
 	"testing"
 	"time"
 
@@ -213,11 +212,6 @@ func TestWatcherTriggersChannelOnWrite(t *testing.T) {
 	info, _ := os.Lstat(file.Name())
 	defer os.Remove(file.Name())
 
-	// Must be a pointer since it's passed into a
-	// function inside Watch().
-	var wg *sync.WaitGroup = new(sync.WaitGroup)
-	wg.Add(1)
-
 	watcher := NewFileWatcher(true)
 	// messageChannels
 	testChannel := make(chan string)
@@ -228,13 +222,10 @@ func TestWatcherTriggersChannelOnWrite(t *testing.T) {
 		Lastmodifed: info.ModTime(),
 	}
 
-	watcher.Watch(func() {
-		wg.Done()
-	}) // runs a goroutine
+	watcher.Watch(func() {})
 
 	// Now write to file.
 	file.WriteString("Write content to file")
-	wg.Wait()
 
 	latest, _ := os.Lstat(file.Name())
 	want := latest.ModTime().String()
