@@ -191,6 +191,11 @@ actual HTML.
 	defer os.Remove(file.Name())
 
 	watcher := NewFileWatcher(true)
+	watcher.harness.useWaitGroup = true
+	// +1 wait for mapping to be constructed based on initial
+	// modtime.
+	watcher.harness.Incr()
+
 	// file.Name() returns "./{uri}", skip first dot.
 	resourceUri := conf.RefreshPrefix + file.Name()[1:]
 	req, err := http.NewRequest("GET", resourceUri, nil)
@@ -200,25 +205,33 @@ actual HTML.
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(watcher.RefreshContent)
 
+	// Run initial request first to construct the
+	// mapping based on the file's initial modtime.
+	go func() {
+		handler.ServeHTTP(rr, req)
+	}()
+
+	// Wait for mapping to be constructed first.
+	watcher.harness.wg.Wait()
+
+	// Now write to file BEFORE watcher.
+	//
+	// File modtime will change. And then watcher will trigger the
+	// channel within the handler to output the new contents.
+	file.WriteString("### new content")
+
 	// Start watching the files in the current directory.
 	// In this case, the service folder.
 	//
-	// NOTE:
-	// Please ensure no other processes/threads are modifying the test file.
-	// Otherwise, you may get cases where the test sometimes pass/fail (flaky).
-	watcher.Watch()
+	// Ensure the code runs once after writing to file.
+	// This goroutine runs every X seconds. So there may be cases
+	// where the code does not get run.
+	watcher.harness.Incr() // +1 for watcher to trigger
+	watcher.harness.Incr() // +1 for handler to read new changes
+	watcher.Watch()        // Decr() is called after main code
 
-	// Wait for main loop to decrement.
-	watcher.harness.useWaitGroup = true
-	watcher.harness.Incr()
-
-	// Now write to file.
-	go func() {
-		watcher.harness.wg.Wait()
-		file.WriteString("### new content")
-	}()
-
-	handler.ServeHTTP(rr, req)
+	// Now wait for both goroutines to finish their tasks.
+	watcher.harness.wg.Wait()
 
 	// The first write happens after first connection opens.
 	// The second write occurs when the watcher reads the file
@@ -252,8 +265,6 @@ data:
 		t.Errorf("got %s; want %s", string(got), want)
 	}
 
-	// Stop watching after test.
-	watcher.harness.stopWatching <- true
 }
 
 func TestCloseConnection(t *testing.T) {

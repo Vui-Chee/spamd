@@ -16,9 +16,6 @@ import (
 type testHarness struct {
 	// Used in testing to control number of iterations of main listener loop.
 	loops int
-	// Use to stop the goroutine during testing, otherwise it will keep running
-	// during running test process.
-	stopWatching chan bool
 	// Currently used to wait for main loop (RefreshContent) to start before
 	// writing to test file.
 	wg *sync.WaitGroup
@@ -37,7 +34,6 @@ func (h *testHarness) Decr() {
 func NewTestHarness() testHarness {
 	return testHarness{
 		loops:        1,
-		stopWatching: make(chan bool),
 		wg:           &sync.WaitGroup{},
 		useWaitGroup: false,
 	}
@@ -116,6 +112,12 @@ func (f *FileWatcher) RefreshContent(w http.ResponseWriter, r *http.Request) {
 				log.Fatalln(err)
 				continue
 			}
+
+			// During testing, need to wait for this goroutine to finish
+			// writing to response buffer before reading it.
+			if f.harness.useWaitGroup {
+				f.harness.Decr()
+			}
 		case <-r.Context().Done():
 			func() {
 				f.lock.Lock()
@@ -148,37 +150,41 @@ func (f *FileWatcher) RefreshContent(w http.ResponseWriter, r *http.Request) {
 func (f *FileWatcher) Watch() {
 	go func() {
 		for {
-			select {
-			case <-f.harness.stopWatching:
-				return
-			default:
-				time.Sleep(300 * time.Millisecond) // 0.3s
+			time.Sleep(300 * time.Millisecond) // 0.3s
 
-				func() {
-					f.lock.Lock()
-					defer f.lock.Unlock()
+			func() {
+				f.lock.Lock()
+				defer f.lock.Unlock()
 
-					for filepath, info := range f.trackFiles {
-						newModtime, err := sys.Modtime(filepath)
-						if err != nil {
-							log.Fatal(err)
-							continue
-						}
+				for filepath, info := range f.trackFiles {
+					newModtime, err := sys.Modtime(filepath)
+					if err != nil {
+						log.Fatal(err)
+						continue
+					}
 
-						if info.Lastmodifed != newModtime {
-							fmt.Printf("%s was modified at: %s\n", filepath, time.Now().Local())
+					if info.Lastmodifed != newModtime {
+						fmt.Printf("%s was modified at: %s\n", filepath, time.Now().Local())
 
-							info.Lastmodifed = newModtime // update modified time
+						info.Lastmodifed = newModtime // update modified time
 
-							for messageChannel, channelPath := range f.messageChannels {
-								// Only write to channels belonging to filepath.
-								if filepath == channelPath {
-									messageChannel <- newModtime.String()
-								}
+						for messageChannel, channelPath := range f.messageChannels {
+							// Only write to channels belonging to filepath.
+							if filepath == channelPath {
+								messageChannel <- newModtime.String()
 							}
 						}
 					}
-				}()
+				}
+
+			}()
+
+			// During testing only.
+			// Breaks the loop once test case is done so that it will interfere
+			// with other tests.
+			if f.harness.useWaitGroup {
+				f.harness.Decr()
+				return
 			}
 		}
 	}()
