@@ -136,6 +136,7 @@ actual HTML.
 	defer os.Remove(file.Name())
 
 	watcher := NewFileWatcher(true)
+	watcher.harness.loops = 0 // Don't run main loop
 
 	// file.Name() returns "./{uri}", skip first dot.
 	resourceUri := conf.RefreshPrefix + file.Name()[1:]
@@ -146,12 +147,6 @@ actual HTML.
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(watcher.RefreshContent)
-
-	go func() {
-		for channel := range watcher.messageChannels {
-			channel <- time.Now().String()
-		}
-	}()
 
 	handler.ServeHTTP(rr, req)
 
@@ -178,7 +173,7 @@ data:
 	}
 }
 
-func TestUpdateContentOnWrite(t *testing.T) {
+func TestCreateMappingWithInitialModtime(t *testing.T) {
 	file, _ := ioutil.TempFile(".", "*")
 	file.WriteString(`# First Page
 
@@ -187,14 +182,10 @@ actual HTML.
 
 ## Contents
 `)
-
 	defer os.Remove(file.Name())
 
 	watcher := NewFileWatcher(true)
-	watcher.harness.useWaitGroup = true
-	// +1 wait for mapping to be constructed based on initial
-	// modtime.
-	watcher.harness.Incr()
+	watcher.harness.loops = 0 // Don't run main loop
 
 	// file.Name() returns "./{uri}", skip first dot.
 	resourceUri := conf.RefreshPrefix + file.Name()[1:]
@@ -205,66 +196,15 @@ actual HTML.
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(watcher.RefreshContent)
 
-	// Run initial request first to construct the
-	// mapping based on the file's initial modtime.
-	go func() {
-		handler.ServeHTTP(rr, req)
-	}()
+	handler.ServeHTTP(rr, req)
 
-	// Wait for mapping to be constructed first.
-	watcher.harness.wg.Wait()
-
-	// Now write to file BEFORE watcher.
-	//
-	// File modtime will change. And then watcher will trigger the
-	// channel within the handler to output the new contents.
-	file.WriteString("### new content")
-
-	// Start watching the files in the current directory.
-	// In this case, the service folder.
-	//
-	// Ensure the code runs once after writing to file.
-	// This goroutine runs every X seconds. So there may be cases
-	// where the code does not get run.
-	watcher.harness.Incr() // +1 for watcher to trigger
-	watcher.harness.Incr() // +1 for handler to read new changes
-	watcher.Watch()        // Decr() is called after main code
-
-	// Now wait for both goroutines to finish their tasks.
-	watcher.harness.wg.Wait()
-
-	// The first write happens after first connection opens.
-	// The second write occurs when the watcher reads the file
-	// change and triggers the next read.
-	want := `data:<h1 id="first-page">First Page</h1>
-data:<p>An example tranformation of markdown contents into
-data:actual HTML.</p>
-data:<h2 id="contents">Contents</h2>
-data:
-
-data:<h1 id="first-page">First Page</h1>
-data:<p>An example tranformation of markdown contents into
-data:actual HTML.</p>
-data:<h2 id="contents">Contents</h2>
-data:<h3 id="new-content">new content</h3>
-data:
-
-`
-	// Read from byte stream.
-	got := make([]byte, len(want))
-	_, err = rr.Result().Body.Read(got)
-	if err != nil {
-		t.Errorf("Error reading from event stream: %s", err)
+	// Check whether modtime matched
+	for filepath, info := range watcher.trackFiles {
+		osInfo, _ := os.Lstat(filepath)
+		if osInfo.ModTime() != info.Lastmodifed {
+			t.Errorf("got %s; want %s", info.Lastmodifed, osInfo.ModTime())
+		}
 	}
-
-	if !rr.Flushed {
-		t.Error("Expected flushed.")
-	}
-
-	if string(got[:len(want)]) != want {
-		t.Errorf("got %s; want %s", string(got), want)
-	}
-
 }
 
 func TestCloseConnection(t *testing.T) {

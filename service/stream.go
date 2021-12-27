@@ -100,23 +100,19 @@ func (f *FileWatcher) RefreshContent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Indicates test can start writing to file.
-	if f.harness.useWaitGroup {
-		f.harness.Decr()
-	}
-
 	for {
+		// Used during testing only.
+		if f.harness.loops > 0 {
+			f.harness.loops--
+		} else {
+			break
+		}
+
 		select {
 		case <-singleChannel:
 			if err := readAndSendMarkdown(w, filepath); err != nil {
 				log.Fatalln(err)
 				continue
-			}
-
-			// During testing, need to wait for this goroutine to finish
-			// writing to response buffer before reading it.
-			if f.harness.useWaitGroup {
-				f.harness.Decr()
 			}
 		case <-r.Context().Done():
 			func() {
@@ -137,13 +133,6 @@ func (f *FileWatcher) RefreshContent(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Used during testing only.
-		if f.harness.loops > 0 {
-			f.harness.loops--
-			if f.harness.loops == 0 {
-				break
-			}
-		}
 	}
 }
 
@@ -176,16 +165,7 @@ func (f *FileWatcher) Watch() {
 						}
 					}
 				}
-
 			}()
-
-			// During testing only.
-			// Breaks the loop once test case is done so that it will interfere
-			// with other tests.
-			if f.harness.useWaitGroup {
-				f.harness.Decr()
-				return
-			}
 		}
 	}()
 }
