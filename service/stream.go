@@ -14,6 +14,9 @@ import (
 
 const (
 	ENDLESS_LOOP = -1
+
+	write_success = "success"
+	error_read    = "error_read"
 )
 
 // This struct is used to store all information used during testing.
@@ -113,10 +116,19 @@ func (f *FileWatcher) RefreshContent(w http.ResponseWriter, r *http.Request) {
 		}
 
 		select {
-		case <-singleChannel:
-			if err := readAndSendMarkdown(w, filepath); err != nil {
-				log.Fatalln(err)
-				continue
+		case val := <-singleChannel:
+			// During such error, file will be deleted from
+			// trackFiles & messageChannels during Watch().
+			if val == error_read {
+				w.Write([]byte("event: userdisconnect\n\n"))
+				return
+			}
+
+			if val == write_success {
+				if err := readAndSendMarkdown(w, filepath); err != nil {
+					log.Fatalln(err)
+					continue
+				}
 			}
 		case <-r.Context().Done():
 			func() {
@@ -136,11 +148,10 @@ func (f *FileWatcher) RefreshContent(w http.ResponseWriter, r *http.Request) {
 			log.Println("User closed tab. This connection is closed.")
 			return
 		}
-
 	}
 }
 
-func (f *FileWatcher) Watch(onModify func()) {
+func (f *FileWatcher) Watch() {
 	go func() {
 		for {
 			time.Sleep(300 * time.Millisecond) // 0.3s
@@ -152,25 +163,40 @@ func (f *FileWatcher) Watch(onModify func()) {
 				for filepath, info := range f.trackFiles {
 					newModtime, err := sys.Modtime(filepath)
 					if err != nil {
-						log.Fatal(err)
+						// File cannot be found. User could have deleted or move
+						// it to different directory.
+						//
+						// So remove it from trackFiles, messageChannels
+						delete(f.trackFiles, filepath)
+						for ch, pth := range f.messageChannels {
+							if pth == filepath {
+								// Need to inform user that has been moved.
+								ch <- error_read
+								delete(f.messageChannels, ch)
+								break
+							}
+						}
+
+						log.Println("Watch(): ", err, f.trackFiles, f.messageChannels)
 						continue
 					}
 
 					if info.Lastmodifed != newModtime {
 						fmt.Printf("%s was modified at: %s\n", filepath, time.Now().Local())
-						onModify()
 
 						info.Lastmodifed = newModtime // update modified time
 
 						for messageChannel, channelPath := range f.messageChannels {
 							// Only write to channels belonging to filepath.
 							if filepath == channelPath {
-								messageChannel <- newModtime.String()
+								messageChannel <- write_success
 							}
 						}
+
 					}
 				}
 			}()
+
 		}
 	}()
 }
