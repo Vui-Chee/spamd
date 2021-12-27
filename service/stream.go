@@ -38,7 +38,7 @@ func (h *testHarness) Decr() {
 func NewTestHarness() testHarness {
 	return testHarness{
 		loops:        1,
-		wg:           &sync.WaitGroup{},
+		wg:           new(sync.WaitGroup),
 		useWaitGroup: false,
 	}
 }
