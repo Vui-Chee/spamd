@@ -71,7 +71,8 @@ func Start(l net.Listener) {
 
 	// Must call this before main thread is blocked
 	// http.Serve.
-	watcher.Watch()
+	watcher.harness.loops = ENDLESS_LOOP
+	watcher.Watch(func() {})
 
 	log.Fatal(http.Serve(l, wrapper))
 }

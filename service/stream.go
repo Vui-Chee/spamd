@@ -12,6 +12,10 @@ import (
 	conf "github.com/vui-chee/mdpreview/service/config"
 )
 
+const (
+	ENDLESS_LOOP = -1
+)
+
 // This struct is used to store all information used during testing.
 type testHarness struct {
 	// Used in testing to control number of iterations of main listener loop.
@@ -104,7 +108,7 @@ func (f *FileWatcher) RefreshContent(w http.ResponseWriter, r *http.Request) {
 		// Used during testing only.
 		if f.harness.loops > 0 {
 			f.harness.loops--
-		} else {
+		} else if f.harness.loops == 0 {
 			break
 		}
 
@@ -136,7 +140,7 @@ func (f *FileWatcher) RefreshContent(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (f *FileWatcher) Watch() {
+func (f *FileWatcher) Watch(onModify func()) {
 	go func() {
 		for {
 			time.Sleep(300 * time.Millisecond) // 0.3s
@@ -154,6 +158,7 @@ func (f *FileWatcher) Watch() {
 
 					if info.Lastmodifed != newModtime {
 						fmt.Printf("%s was modified at: %s\n", filepath, time.Now().Local())
+						onModify()
 
 						info.Lastmodifed = newModtime // update modified time
 
