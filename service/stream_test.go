@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -209,49 +208,6 @@ actual HTML.
 	}
 }
 
-func TestWithoutWaitgroup(t *testing.T) {
-	testCh := make(chan string)
-
-	go func() {
-		for {
-			time.Sleep(300 * time.Millisecond)
-			testCh <- "123" // Also blocks till its received
-		}
-	}()
-
-	// Now listen on channel
-	got := <-testCh
-	if got != "123" {
-		t.Errorf("got %s; want 123", got)
-	}
-}
-
-func TestWriteToChannel(t *testing.T) {
-	var wg *sync.WaitGroup = new(sync.WaitGroup)
-
-	testCh := make(chan string)
-
-	wg.Add(1)
-
-	go func() {
-		for {
-			time.Sleep(300 * time.Millisecond)
-			wg.Done()
-			testCh <- "123" // Also blocks till its received
-		}
-	}()
-
-	wg.Wait()
-
-	fmt.Println("Listening on channel")
-
-	// Now listen on channel
-	got := <-testCh
-	if got != "123" {
-		t.Errorf("got %s; want 123", got)
-	}
-}
-
 func TestCloseConnection(t *testing.T) {
 	file, _ := ioutil.TempFile(".", "*")
 	defer os.Remove(file.Name())
@@ -276,5 +232,114 @@ func TestCloseConnection(t *testing.T) {
 		// If success close.
 	default:
 		t.Error("Failed to close conn.")
+	}
+}
+
+func TestAddNewConnection(t *testing.T) {
+	watcher := NewFileWatcher(true)
+
+	// 1. test add to empty set
+	file1 := "first.txt"
+	watcher.AddConn(file1)
+	if _, ok := watcher.files[file1]; !ok {
+		t.Errorf("Connection for %s should be added. Got non-found in map.", file1)
+	}
+
+	// 2. add to non-empty set
+	watcher.AddConn(file1) // add another connection to same file
+	if connections := watcher.files[file1]; len(connections) != 2 {
+		t.Errorf("Want 2 connections under %s. Got %d.", file1, len(connections))
+	}
+
+	// 3. add to another empty set
+	file2 := "second.txt"
+	watcher.AddConn(file2)
+	connections, ok := watcher.files[file2]
+	if !ok {
+		t.Errorf("Connection for %s should be added. Got non-found in map.", file2)
+	}
+	if len(connections) != 1 {
+		t.Errorf("Want single connection under %s. Got %d.", file2, len(connections))
+	}
+}
+
+func TestDeleteConnection(t *testing.T) {
+	watcher := NewFileWatcher(true)
+	file := "test.md"
+
+	targetConn := &conn{
+		Ch: make(chan string),
+	}
+
+	// Initially no connections in map.
+	watcher.files[file] = []*conn{}
+
+	// 1. try delete on empty set
+	err := watcher.DeleteConn(file, targetConn)
+	if err == nil {
+		t.Error("got <nil>; want error.")
+	}
+
+	// 2. delete existing conn
+	watcher.files[file] = []*conn{
+		targetConn,
+	}
+	err = watcher.DeleteConn(file, targetConn)
+	if err != nil {
+		t.Errorf("got %s; want <nil>.", err)
+	}
+	if len(watcher.files) != 0 {
+		t.Errorf("got %d; want 0.", len(watcher.files))
+	}
+}
+
+func TestDropConnections(t *testing.T) {
+	watcher := NewFileWatcher(true)
+	file := "test.md"
+	watcher.files[file] = []*conn{
+		{
+			Ch: make(chan string),
+		},
+		{
+			Ch: make(chan string),
+		},
+		{
+			Ch: make(chan string),
+		},
+	}
+
+	watcher.DropConnectionsToFile(file)
+	_, ok := watcher.files[file]
+	if ok {
+		t.Errorf("got true; want false")
+	}
+}
+
+func TestMultipleAddConn(t *testing.T) {
+	var files = []string{
+		"foo.md",
+		"foo.md",
+		"abc.md",
+	}
+	var wg sync.WaitGroup
+
+	watcher := NewFileWatcher(true)
+	for i := 0; i < len(files); i++ {
+		file := files[i]
+		wg.Add(1)
+		go func() {
+			watcher.AddConn(file)
+			wg.Done()
+		}()
+	}
+
+	wg.Wait()
+
+	// check contents of map
+	if len(watcher.files) != 2 {
+		t.Errorf("want 2 unique files; got %d", len(watcher.files))
+	}
+	if len(watcher.files["foo.md"]) != 2 {
+		t.Errorf("want 2 connections under %s; got %d", "foo.md", len(watcher.files["foo.md"]))
 	}
 }

@@ -30,19 +30,21 @@ type testHarness struct {
 	useWaitGroup bool
 }
 
-func (h *testHarness) Incr() {
-	h.wg.Add(1)
-}
-
-func (h *testHarness) Decr() {
-	h.wg.Done()
-}
-
 func NewTestHarness() testHarness {
 	return testHarness{
 		loops:        1,
 		wg:           new(sync.WaitGroup),
 		useWaitGroup: false,
+	}
+}
+
+type conn struct {
+	Ch chan string
+}
+
+func NewConn() *conn {
+	return &conn{
+		Ch: make(chan string),
 	}
 }
 
@@ -52,6 +54,8 @@ type fileInfo struct {
 }
 
 type FileWatcher struct {
+	files map[string]([]*conn)
+
 	// Maps a relative filepath to the number browser tabs
 	// that open it as well as the files last modified time.
 	trackFiles map[string]*fileInfo
@@ -66,6 +70,64 @@ type FileWatcher struct {
 
 	// Initialized during testing.
 	harness testHarness
+}
+
+func (f *FileWatcher) AddConn(filepath string) *conn {
+	f.lock.Lock()
+	defer f.lock.Unlock()
+
+	newConn := NewConn()
+	connections, ok := f.files[filepath]
+	if !ok {
+		f.files[filepath] = []*conn{
+			newConn,
+		}
+	} else {
+		f.files[filepath] = append(connections, newConn)
+	}
+
+	return newConn
+}
+
+func (f *FileWatcher) DeleteConn(filepath string, targetConn *conn) error {
+	f.lock.Lock()
+	defer f.lock.Unlock()
+
+	var index int = -1
+	connections, ok := f.files[filepath]
+	if !ok {
+		// File does not exist in map.
+		return fmt.Errorf("%s not found in map.", filepath)
+	}
+
+	for i, conn := range f.files[filepath] {
+		if conn == targetConn {
+			index = i
+			break
+		}
+	}
+
+	// Connection not found.
+	if index == -1 {
+		return fmt.Errorf("Connection %v not found for %s", targetConn, filepath)
+	}
+
+	updatedConnections := append(connections[:index], connections[index+1:]...)
+	if len(updatedConnections) == 0 {
+		// No more connections to this file, so drop key-value pair.
+		delete(f.files, filepath)
+	} else {
+		f.files[filepath] = updatedConnections
+	}
+
+	return nil
+}
+
+func (f *FileWatcher) DropConnectionsToFile(filepath string) {
+	f.lock.Lock()
+	defer f.lock.Unlock()
+
+	delete(f.files, filepath)
 }
 
 func (f *FileWatcher) RefreshContent(w http.ResponseWriter, r *http.Request) {
@@ -120,7 +182,7 @@ func (f *FileWatcher) RefreshContent(w http.ResponseWriter, r *http.Request) {
 			// During such error, file will be deleted from
 			// trackFiles & messageChannels during Watch().
 			if val == error_read {
-				w.Write([]byte("event: userdisconnect\n\n"))
+				w.Write([]byte("event:userdisconnect\n\n"))
 				return
 			}
 
@@ -204,6 +266,8 @@ func (f *FileWatcher) Watch() {
 func NewFileWatcher(useHarness bool) *FileWatcher {
 	if useHarness {
 		return &FileWatcher{
+			files: make(map[string]([]*conn)),
+
 			trackFiles:      make(map[string]*fileInfo),
 			messageChannels: make(map[chan string]string),
 			lock:            sync.Mutex{},
@@ -213,6 +277,8 @@ func NewFileWatcher(useHarness bool) *FileWatcher {
 	}
 
 	return &FileWatcher{
+		files: make(map[string]([]*conn)),
+
 		trackFiles:      make(map[string]*fileInfo),
 		messageChannels: make(map[chan string]string),
 		lock:            sync.Mutex{},
