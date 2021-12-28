@@ -25,14 +25,8 @@ func TestConstructFileWatcher(t *testing.T) {
 		t.Error("got <nil>; want &FileWatcher{}")
 	}
 
-	want = "map[string]*service.fileInfo"
-	got = reflect.TypeOf(watcher.trackFiles).String()
-	if got != want {
-		t.Errorf("got %s; want %s", got, want)
-	}
-
-	want = "map[chan string]string"
-	got = reflect.TypeOf(watcher.messageChannels).String()
+	want = "map[string]*service.connCluster"
+	got = reflect.TypeOf(watcher.files).String()
 	if got != want {
 		t.Errorf("got %s; want %s", got, want)
 	}
@@ -200,10 +194,11 @@ actual HTML.
 	handler.ServeHTTP(rr, req)
 
 	// Check whether modtime matched
-	for filepath, info := range watcher.trackFiles {
+	for filepath := range watcher.files {
 		osInfo, _ := os.Lstat(filepath)
-		if osInfo.ModTime() != info.Lastmodifed {
-			t.Errorf("got %s; want %s", info.Lastmodifed, osInfo.ModTime())
+		cluster := watcher.files[filepath]
+		if osInfo.ModTime() != cluster.Lastmodifed {
+			t.Errorf("got %s; want %s", cluster.Lastmodifed, osInfo.ModTime())
 		}
 	}
 }
@@ -240,26 +235,29 @@ func TestAddNewConnection(t *testing.T) {
 
 	// 1. test add to empty set
 	file1 := "first.txt"
-	watcher.AddConn(file1)
+	conn := watcher.AddConn(file1, time.Time{})
 	if _, ok := watcher.files[file1]; !ok {
-		t.Errorf("Connection for %s should be added. Got non-found in map.", file1)
+		t.Errorf("Connection for %s should be added. Got not found in map.", file1)
+	}
+	if conn == nil {
+		t.Error("got <nil>; want *conn returned on AddConn()")
 	}
 
 	// 2. add to non-empty set
-	watcher.AddConn(file1) // add another connection to same file
-	if connections := watcher.files[file1]; len(connections) != 2 {
-		t.Errorf("Want 2 connections under %s. Got %d.", file1, len(connections))
+	watcher.AddConn(file1, time.Time{}) // add another connection to same file
+	if cluster := watcher.files[file1]; len(cluster.conns) != 2 {
+		t.Errorf("Want 2 connections under %s. Got %d.", file1, len(cluster.conns))
 	}
 
 	// 3. add to another empty set
 	file2 := "second.txt"
-	watcher.AddConn(file2)
-	connections, ok := watcher.files[file2]
+	conn = watcher.AddConn(file2, time.Time{})
+	cluster, ok := watcher.files[file2]
 	if !ok {
 		t.Errorf("Connection for %s should be added. Got non-found in map.", file2)
 	}
-	if len(connections) != 1 {
-		t.Errorf("Want single connection under %s. Got %d.", file2, len(connections))
+	if len(cluster.conns) != 1 {
+		t.Errorf("Want single connection under %s. Got %d.", file2, len(cluster.conns))
 	}
 }
 
@@ -272,7 +270,7 @@ func TestDeleteConnection(t *testing.T) {
 	}
 
 	// Initially no connections in map.
-	watcher.files[file] = []*conn{}
+	watcher.files[file] = &connCluster{}
 
 	// 1. try delete on empty set
 	err := watcher.DeleteConn(file, targetConn)
@@ -281,37 +279,18 @@ func TestDeleteConnection(t *testing.T) {
 	}
 
 	// 2. delete existing conn
-	watcher.files[file] = []*conn{
-		targetConn,
+	watcher.files[file] = &connCluster{
+		conns: []*conn{
+			targetConn,
+		},
 	}
+
 	err = watcher.DeleteConn(file, targetConn)
 	if err != nil {
 		t.Errorf("got %s; want <nil>.", err)
 	}
 	if len(watcher.files) != 0 {
 		t.Errorf("got %d; want 0.", len(watcher.files))
-	}
-}
-
-func TestDropConnections(t *testing.T) {
-	watcher := NewFileWatcher(true)
-	file := "test.md"
-	watcher.files[file] = []*conn{
-		{
-			Ch: make(chan string),
-		},
-		{
-			Ch: make(chan string),
-		},
-		{
-			Ch: make(chan string),
-		},
-	}
-
-	watcher.DropConnectionsToFile(file)
-	_, ok := watcher.files[file]
-	if ok {
-		t.Errorf("got true; want false")
 	}
 }
 
@@ -328,7 +307,7 @@ func TestMultipleAddConn(t *testing.T) {
 		file := files[i]
 		wg.Add(1)
 		go func() {
-			watcher.AddConn(file)
+			watcher.AddConn(file, time.Time{})
 			wg.Done()
 		}()
 	}
@@ -339,7 +318,7 @@ func TestMultipleAddConn(t *testing.T) {
 	if len(watcher.files) != 2 {
 		t.Errorf("want 2 unique files; got %d", len(watcher.files))
 	}
-	if len(watcher.files["foo.md"]) != 2 {
-		t.Errorf("want 2 connections under %s; got %d", "foo.md", len(watcher.files["foo.md"]))
+	if len(watcher.files["foo.md"].conns) != 2 {
+		t.Errorf("want 2 connections under %s; got %d", "foo.md", len(watcher.files["foo.md"].conns))
 	}
 }
