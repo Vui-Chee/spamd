@@ -60,3 +60,7 @@ func IsFileWithExt(filepath string, targetExt string) bool {
 
 	return true
 }
+
+func Eprintf(format string, params ...interface{}) {
+	fmt.Fprint(os.Stderr, fmt.Sprintf(format, params...))
+}

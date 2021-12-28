@@ -49,7 +49,7 @@ var (
 
 func main() {
 	flag.Usage = func() {
-		fmt.Fprint(os.Stderr, usage)
+		sys.Eprintf(usage)
 	}
 
 	flag.Parse()
@@ -62,15 +62,25 @@ func main() {
 	}
 
 	if flag.NArg() >= 1 {
-		filepath = flag.Args()[0]
+		for i := 0; i < len(flag.Args()); i++ {
+			filepath := flag.Args()[i]
 
-		if !sys.IsFileWithExt(filepath, ".md") {
-			exitAfterUsage("File must be a markdown document.")
+			if !sys.IsFileWithExt(filepath, ".md") {
+				sys.Eprintf("%s is not a markdown document.\n", filepath)
+			} else if !sys.Exists(filepath) {
+				sys.Eprintf("%s does not exist.\n", filepath)
+			} else {
+				if !*nobrowser {
+					go func() {
+						sys.Exec(browser.Commands(protocol + l.Addr().String() + "/" + filepath))
+					}()
+				}
+			}
 		}
-	}
-
-	if !*nobrowser && ((flag.NArg() >= 1 && sys.IsFileWithExt(filepath, ".md")) || sys.Exists(filepath)) {
-		sys.Exec(browser.Commands(protocol + l.Addr().String() + "/" + filepath))
+	} else {
+		if !*nobrowser && sys.IsFileWithExt(filepath, ".md") && sys.Exists(filepath) {
+			sys.Exec(browser.Commands(protocol + l.Addr().String() + "/" + filepath))
+		}
 	}
 
 	fmt.Printf("Visit your markdown at %s/{path-to-markdown}.\n\n", protocol+l.Addr().String())
