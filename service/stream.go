@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -135,10 +136,18 @@ func (f *FileWatcher) DeleteConn(filepath string, targetConn *conn) error {
 }
 
 func (f *FileWatcher) RefreshContent(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
 	// Get the path relative to the directory where the tool is run.
 	// '+1' to skip the leading '/'.
 	uri := r.URL.Path
-	filepath := uri[len(conf.RefreshPrefix)+1:]
+	filepath, err := filepath.EvalSymlinks(uri[len(conf.RefreshPrefix)+1:])
+	if err != nil {
+		w.Write([]byte("event:userdisconnect\n\n"))
+		return
+	}
 
 	modtime, err := sys.Modtime(filepath)
 	if err != nil {
@@ -146,10 +155,6 @@ func (f *FileWatcher) RefreshContent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	conn := f.AddConn(filepath, modtime)
-
-	w.Header().Set("Connection", "keep-alive")
-	w.Header().Set("Content-Type", "text/event-stream")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	// Read first page
 	if err := readAndSendMarkdown(w, filepath); err != nil {
