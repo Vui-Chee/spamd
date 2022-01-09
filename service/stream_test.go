@@ -236,7 +236,6 @@ actual HTML.</p>
 
 func TestTriggerWriteOnWatch(t *testing.T) {
 	file, _ := ioutil.TempFile(".", "*")
-	file.WriteString("# First Page")
 	defer os.Remove(file.Name())
 	info, _ := file.Stat()
 	filepath := file.Name()[2:]
@@ -258,6 +257,9 @@ func TestTriggerWriteOnWatch(t *testing.T) {
 	watcher.Watch()
 	watcher.harness.wg.Wait() // wait for goroutine to start.
 
+	// Space out the write time, otherwise, the difference in
+	// time may be negligible.
+	time.Sleep(1 * time.Second)
 	file.WriteString("Next paragraph.")
 
 	// Check if channel is written to with correct message.
@@ -293,6 +295,7 @@ func TestTriggerErrorOnWatch(t *testing.T) {
 	watcher.harness.wg.Wait() // wait for goroutine to start.
 
 	// Now drop file, should trigger err during sys.Modtime
+	time.Sleep(1 * time.Second)
 	os.Remove(file.Name())
 
 	for _, conn := range watcher.files[filepath].conns {
