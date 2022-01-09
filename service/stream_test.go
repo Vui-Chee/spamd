@@ -1,18 +1,20 @@
 package service
 
 import (
-	"bytes"
-	"context"
-	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"reflect"
+	"strings"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/gorilla/websocket"
+
+	testutils "github.com/vui-chee/mdpreview/internal/testing"
 	conf "github.com/vui-chee/mdpreview/service/config"
 )
 
@@ -38,204 +40,14 @@ func TestConstructFileWatcher(t *testing.T) {
 	}
 }
 
-func TestFormatStreamData(t *testing.T) {
-	// Each data packet must end with newline.
-	// A single newline is also a data packet - empty data packet.
-	inputs := []string{
-		"",
-		"\n",
-		"abc",
-		"abc\n",
-		"abc\ndef",
-		"abc\ndef\n",
-
-		// consecutive newlines
-		"abc\n\n",
-		"abc\n\ndef",
-		"abc\n\n\ndef",
-		"abc\n\ndef\n",
-	}
-
-	expected := []string{
-		"",
-		"data:\ndata:\n\n",
-		"data:abc\n\n",
-		"data:abc\ndata:\n\n",
-		"data:abc\ndata:def\n\n",
-		"data:abc\ndata:def\ndata:\n\n",
-
-		"data:abc\ndata:\ndata:\n\n",
-		"data:abc\ndata:\ndata:def\n\n",
-		"data:abc\ndata:\ndata:\ndata:def\n\n",
-		"data:abc\ndata:\ndata:def\ndata:\n\n",
-	}
-
-	for i, input := range inputs {
-		got := eventStreamFormat(input)
-		if !reflect.DeepEqual(got, []byte(expected[i])) {
-			t.Errorf("case %d, eventStreamFormat returns \"%s\", expected \"%s\"", i+1, got, expected[i])
-		}
-	}
-}
-
-func TestErrorDuringRead(t *testing.T) {
-	wantError := errors.New("Convert function fails.")
-
-	file, _ := ioutil.TempFile(".", "*")
-	converterMutex.Lock()
-	savedConverter := converter
-	converter = func(filedata []byte, content *bytes.Buffer) error {
-		return wantError
-	}
-	defer func() {
-		os.Remove(file.Name())
-		converter = savedConverter
-		converterMutex.Unlock()
-	}()
-
-	err := readAndSendMarkdown(nil, file.Name())
-	if err != wantError {
-		t.Errorf("got %s; want %s", err, wantError)
-	}
-}
-
-func TestWriteContentAsDataPacket(t *testing.T) {
-	file, _ := ioutil.TempFile(".", "*")
-	file.WriteString("# Header")
-	defer os.Remove(file.Name())
-
-	rr := httptest.NewRecorder()
-	readAndSendMarkdown(rr, file.Name())
-	if !rr.Flushed {
-		t.Error("Should have flushed.")
-	}
-
-	want := `data:<h1 id="header">Header</h1>
-data:
-
-`
-	if rr.Body.String() != want {
-		t.Errorf("got %s; want %s", rr.Body.String(), want)
-	}
-}
-
-func TestGetFirstPageOnConnect(t *testing.T) {
-	file, _ := ioutil.TempFile(".", "*")
-	file.WriteString(`# First Page
-
-An example tranformation of markdown contents into
-actual HTML.
-
-## XYZ
-`)
-	defer os.Remove(file.Name())
-
-	watcher := NewFileWatcher(true)
-	watcher.harness.loops = 0 // Don't run main loop
-
-	// file.Name() returns "./{uri}", skip first dot.
-	resourceUri := conf.RefreshPrefix + file.Name()[1:]
-	req, err := http.NewRequest("GET", resourceUri, nil)
-	if err != nil {
-		t.Errorf("Error creating a new request: %v", err)
-	}
-
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(watcher.RefreshContent)
-
-	handler.ServeHTTP(rr, req)
-
-	// Read from byte stream.
-	got := make([]byte, 200)
-	_, err = rr.Result().Body.Read(got)
-	if err != nil {
-		t.Errorf("Error reading from event stream: %s", err)
-	}
-
-	want := `data:<h1 id="first-page">First Page</h1>
-data:<p>An example tranformation of markdown contents into
-data:actual HTML.</p>
-data:<h2 id="xyz">XYZ</h2>
-data:
-`
-
-	if !rr.Flushed {
-		t.Error("Expected flushed.")
-	}
-
-	if string(got)[:len(want)] != want {
-		t.Errorf("got %s; want %s", string(got), want)
-	}
-}
-
-func TestCreateMappingWithInitialModtime(t *testing.T) {
-	file, _ := ioutil.TempFile(".", "*")
-	file.WriteString(`# First Page
-
-An example tranformation of markdown contents into
-actual HTML.
-
-## Contents
-`)
-	defer os.Remove(file.Name())
-
-	watcher := NewFileWatcher(true)
-	watcher.harness.loops = 0 // Don't run main loop
-
-	// file.Name() returns "./{uri}", skip first dot.
-	resourceUri := conf.RefreshPrefix + file.Name()[1:]
-	req, err := http.NewRequest("GET", resourceUri, nil)
-	if err != nil {
-		t.Errorf("Error creating a new request: %v", err)
-	}
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(watcher.RefreshContent)
-
-	handler.ServeHTTP(rr, req)
-
-	// Check whether modtime matched
-	for filepath := range watcher.files {
-		osInfo, _ := os.Lstat(filepath)
-		cluster := watcher.files[filepath]
-		if osInfo.ModTime() != cluster.Lastmodifed {
-			t.Errorf("got %s; want %s", cluster.Lastmodifed, osInfo.ModTime())
-		}
-	}
-}
-
-func TestCloseConnection(t *testing.T) {
-	file, _ := ioutil.TempFile(".", "*")
-	defer os.Remove(file.Name())
-
-	watcher := NewFileWatcher(true)
-
-	ctx, cancel := context.WithTimeout(context.TODO(), 100*time.Millisecond)
-	// Cancel request immdiately.
-	cancel()
-
-	req, err := http.NewRequestWithContext(ctx, "GET", conf.RefreshPrefix+file.Name()[1:], nil)
-	if err != nil {
-		t.Errorf("Error creating a new request: %v", err)
-	}
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(watcher.RefreshContent)
-
-	handler.ServeHTTP(rr, req)
-
-	select {
-	case <-ctx.Done():
-		// If success close.
-	default:
-		t.Error("Failed to close conn.")
-	}
-}
-
 func TestAddNewConnection(t *testing.T) {
 	watcher := NewFileWatcher(true)
+	// Create mock ws connection.
+	c := &websocket.Conn{}
 
 	// 1. test add to empty set
 	file1 := "first.txt"
-	conn := watcher.AddConn(file1, time.Time{})
+	conn := watcher.AddConn(file1, time.Time{}, c)
 	if _, ok := watcher.files[file1]; !ok {
 		t.Errorf("Connection for %s should be added. Got not found in map.", file1)
 	}
@@ -244,14 +56,14 @@ func TestAddNewConnection(t *testing.T) {
 	}
 
 	// 2. add to non-empty set
-	watcher.AddConn(file1, time.Time{}) // add another connection to same file
+	watcher.AddConn(file1, time.Time{}, c) // add another connection to same file
 	if cluster := watcher.files[file1]; len(cluster.conns) != 2 {
 		t.Errorf("Want 2 connections under %s. Got %d.", file1, len(cluster.conns))
 	}
 
 	// 3. add to another empty set
 	file2 := "second.txt"
-	conn = watcher.AddConn(file2, time.Time{})
+	conn = watcher.AddConn(file2, time.Time{}, c)
 	cluster, ok := watcher.files[file2]
 	if !ok {
 		t.Errorf("Connection for %s should be added. Got non-found in map.", file2)
@@ -261,12 +73,27 @@ func TestAddNewConnection(t *testing.T) {
 	}
 }
 
+type MockWebsocketConn struct{}
+
+func (c *MockWebsocketConn) Close() error {
+	return nil
+}
+
+func (c *MockWebsocketConn) ReadMessage() (messageType int, p []byte, err error) {
+	return 0, nil, nil
+}
+
+func (c *MockWebsocketConn) WriteMessage(messageType int, data []byte) error {
+	return nil
+}
+
 func TestDeleteConnection(t *testing.T) {
 	watcher := NewFileWatcher(true)
 	file := "test.md"
 
 	targetConn := &conn{
-		Ch: make(chan string),
+		Ch:   make(chan string),
+		Conn: &MockWebsocketConn{},
 	}
 
 	// Initially no connections in map.
@@ -307,7 +134,7 @@ func TestMultipleAddConn(t *testing.T) {
 		file := files[i]
 		wg.Add(1)
 		go func() {
-			watcher.AddConn(file, time.Time{})
+			watcher.AddConn(file, time.Time{}, &MockWebsocketConn{})
 			wg.Done()
 		}()
 	}
@@ -320,5 +147,158 @@ func TestMultipleAddConn(t *testing.T) {
 	}
 	if len(watcher.files["foo.md"].conns) != 2 {
 		t.Errorf("want 2 connections under %s; got %d", "foo.md", len(watcher.files["foo.md"].conns))
+	}
+}
+
+func createMockWsConn(resourceUri string, handler func(http.ResponseWriter, *http.Request)) (*httptest.Server, *websocket.Conn, error) {
+	// Start a test server.
+	s := httptest.NewServer(http.HandlerFunc(handler))
+
+	// Connect to test server.
+	u := "ws" + strings.TrimPrefix(s.URL, "http") + resourceUri
+	ws, _, err := websocket.DefaultDialer.Dial(u, nil)
+	if err != nil {
+		s.Close()
+		return nil, nil, err
+	}
+
+	return s, ws, nil
+}
+
+func TestCloseConnection(t *testing.T) {
+	file, _ := ioutil.TempFile(".", "*")
+	defer os.Remove(file.Name())
+
+	watcher := NewFileWatcher(true)
+	resourceUri := conf.RefreshPrefix + file.Name()[1:]
+
+	s, _, err := createMockWsConn(resourceUri, watcher.RefreshContent)
+	defer s.Close()
+	if err != nil {
+		t.Error(err)
+	}
+
+	filepath := file.Name()[2:]
+
+	// Deactivate timestamp.
+	testutils.NoTimestamp()
+
+	got := testutils.CaptureLog(func() {
+		cluster := watcher.files[filepath]
+		// Send close_conn event to target connection.
+		for _, conn := range cluster.conns {
+			conn.Trigger(close_conn)
+		}
+	})
+
+	want := fmt.Sprintf("Closed tab for %s\n", filepath)
+	if got != want {
+		t.Errorf("got %s; want %s", got, want)
+	}
+}
+
+func TestGetFirstPageOnConnect(t *testing.T) {
+	file, _ := ioutil.TempFile(".", "*")
+	file.WriteString(`# First Page
+
+An example tranformation of markdown contents into
+actual HTML.
+
+## XYZ
+`)
+	defer os.Remove(file.Name())
+
+	watcher := NewFileWatcher(true)
+	watcher.harness.loops = 0 // Don't run main loop
+	resourceUri := conf.RefreshPrefix + file.Name()[1:]
+
+	s, ws, err := createMockWsConn(resourceUri, watcher.RefreshContent)
+	defer s.Close()
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Read from websocket.
+	_, got, err := ws.ReadMessage()
+	if err != nil {
+		t.Errorf("Error reading websocket connection: %s", err)
+	}
+
+	want := `<h1 id="first-page">First Page</h1>
+<p>An example tranformation of markdown contents into
+actual HTML.</p>
+<h2 id="xyz">XYZ</h2>
+`
+	if string(got) != want {
+		t.Errorf("got %s; want %s", string(got), want)
+	}
+}
+
+func TestTriggerWriteOnWatch(t *testing.T) {
+	file, _ := ioutil.TempFile(".", "*")
+	file.WriteString("# First Page")
+	defer os.Remove(file.Name())
+	info, _ := file.Stat()
+	filepath := file.Name()[2:]
+
+	watcher := NewFileWatcher(true)
+	// Setup fake conn struct.
+	watcher.files[filepath] = &connCluster{
+		Lastmodifed: info.ModTime(),
+		conns: []*conn{
+			{
+				Ch: make(chan string),
+			},
+		},
+	}
+
+	watcher.harness.useWaitGroup = true
+	watcher.watchInv = 0 // No delay between each loop.
+	watcher.harness.wg.Add(1)
+	watcher.Watch()
+	watcher.harness.wg.Wait() // wait for goroutine to start.
+
+	file.WriteString("Next paragraph.")
+
+	// Check if channel is written to with correct message.
+	for _, conn := range watcher.files[filepath].conns {
+		msg := <-conn.Ch
+		if msg != write_success {
+			t.Errorf("got %s; want %s", msg, write_success)
+		}
+	}
+}
+
+func TestTriggerErrorOnWatch(t *testing.T) {
+	file, _ := ioutil.TempFile(".", "*")
+	file.WriteString("# First Page")
+	info, _ := file.Stat()
+	filepath := file.Name()[2:]
+
+	watcher := NewFileWatcher(true)
+	// Setup fake conn struct.
+	watcher.files[filepath] = &connCluster{
+		Lastmodifed: info.ModTime(),
+		conns: []*conn{
+			{
+				Ch:   make(chan string),
+				Conn: &MockWebsocketConn{},
+			},
+		},
+	}
+	watcher.harness.useWaitGroup = true
+	watcher.watchInv = 0 // No delay between each loop.
+	watcher.harness.wg.Add(1)
+	watcher.Watch()
+	watcher.harness.wg.Wait() // wait for goroutine to start.
+
+	// Now drop file, should trigger err during sys.Modtime
+	os.Remove(file.Name())
+
+	for _, conn := range watcher.files[filepath].conns {
+		msg := <-conn.Ch
+		if msg != error_read {
+			t.Errorf("got %s; want %s", msg, error_read)
+		}
 	}
 }

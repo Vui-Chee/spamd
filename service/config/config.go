@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+
+	"github.com/alecthomas/chroma/styles"
 )
 
 const (
@@ -28,47 +30,8 @@ NOTE: the last line does not have a trailing comma.
 `
 )
 
-var themes = []string{
-	"abap",
-	"api",
-	"algol_nu",
-	"arduino",
-	"autumn",
-	"borland",
-	"bw",
-	"colorful",
-	"dracula",
-	"emacs",
-	"friendly",
-	"fruity",
-	"github",
-	"igor",
-	"lovelace",
-	"manni",
-	"monokai",
-	"monokailight",
-	"murphy",
-	"native",
-	"paraiso-dark",
-	"paraiso-light",
-	"pastie",
-	"perldoc",
-	"pygments",
-	"rainbow_dash",
-	"rrt",
-	"solarized-dark",
-	"solarized-dark256",
-	"solarized-light",
-	"swapoff",
-	"tango",
-	"trac",
-	"vim",
-	"vs",
-	"xcode",
-}
-
 func IsChromaTheme(theme string) bool {
-	for _, th := range themes {
+	for _, th := range styles.Names() {
 		if th == theme {
 			return true
 		}
@@ -100,7 +63,7 @@ func (conf *ServiceConfig) SetCodeBlockTheme(codeBlockStyle string) error {
 
 	if !IsChromaTheme(codeBlockStyle) {
 		message := "Unknown theme. The following styles are available:\n\n"
-		for _, th := range themes {
+		for _, th := range styles.Names() {
 			message += "	" + th + "\n"
 		}
 

@@ -26,6 +26,8 @@ const (
 // but only accessible within the service package.
 var (
 	serviceConfig *conf.ServiceConfig
+
+	watcher *FileWatcher
 )
 
 func init() {
@@ -60,7 +62,7 @@ func Listen(port int) (net.Listener, error) {
 }
 
 func Start(l net.Listener) {
-	watcher := NewFileWatcher(false)
+	watcher = NewFileWatcher(false)
 	mux := m.RegexpHandler{
 		AdditionalCheck: redirectIfNotMarkdown,
 	}
@@ -75,6 +77,12 @@ func Start(l net.Listener) {
 	watcher.Watch()
 
 	log.Fatal(http.Serve(l, wrapper))
+}
+
+func Shutdown() {
+	fmt.Println("Shutting down server...")
+	watcher.CloseAllConn()
+	fmt.Println("Server has been shut down.")
 }
 
 func redirectIfNotMarkdown(path string) bool {

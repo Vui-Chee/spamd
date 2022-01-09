@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/signal"
 
 	"github.com/vui-chee/mdpreview/internal/browser"
 	"github.com/vui-chee/mdpreview/internal/sys"
@@ -48,6 +49,10 @@ var (
 )
 
 func main() {
+	// Capture ctrl-c to close server.
+	var interrupt = make(chan os.Signal, 1)
+	signal.Notify(interrupt, os.Interrupt)
+
 	flag.Usage = func() {
 		sys.Eprintf(usage)
 	}
@@ -85,6 +90,13 @@ func main() {
 
 	fmt.Printf("Visit your markdown at %s/{path-to-markdown}.\n\n", protocol+l.Addr().String())
 	fmt.Println("{path-to-markdown} can be a relative path from current directory.")
+
+	// Close all websocket connections before exiting.
+	go func() {
+		<-interrupt
+		service.Shutdown()
+		os.Exit(1)
+	}()
 
 	service.Start(l)
 }

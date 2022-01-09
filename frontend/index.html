@@ -47,23 +47,34 @@
       });
     }
 
-    // Listen to server events using `EventSource`.
-    let eventListener = new EventSource("{{.RefreshPrefix}}{{.URI}}");
-    eventListener.onmessage = (event) => {
+    let heartbeatInterval; // delay between each ping to the server.
+    const host = location.host;
+    const ws = new WebSocket("ws://" + host + "{{.RefreshPrefix}}{{.URI}}");
+    ws.onmessage = refreshContent;
+    ws.onerror = cleanup;
+    ws.onclose = cleanup;
+
+    function refreshContent(event) {
       let { data } = event;
       let contentDiv = document.querySelector(".markdown-body");
       contentDiv.innerHTML = data;
 
       removeBulletPointsFromTaskListItem();
-    };
-    eventListener.onerror = (event) => {
+    }
+
+    function cleanup(event) {
       // Stop trying to contact server.
-      eventListener.close();
+      ws.close();
+      ws.removeEventListener("message", refreshContent);
+      ws.removeEventListener("error", cleanup);
 
       // Change content area with an error message saying the server is closed.
       let contentDiv = document.querySelector(".markdown-body");
-      contentDiv.innerHTML = `The server has shutdown. Please reopen or refresh once a new server starts.`;
-    };
+      contentDiv.innerHTML = `You have been disconnected.`;
+
+      // Close the window/tab that was directly opened by the tool.
+      window.close();
+    }
 
     const toggle = document.querySelector(".switch > input");
     toggle.addEventListener("click", () => {

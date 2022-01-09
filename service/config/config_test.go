@@ -5,6 +5,8 @@ import (
 	"os"
 	"path"
 	"testing"
+
+	"github.com/alecthomas/chroma/styles"
 )
 
 func TestIsChromaTheme(t *testing.T) {
@@ -16,7 +18,7 @@ func TestIsChromaTheme(t *testing.T) {
 		t.Error("got: true; want: false")
 	}
 
-	for _, validTheme := range themes {
+	for _, validTheme := range styles.Names() {
 		got = IsChromaTheme(validTheme)
 		if got != true {
 			t.Error("got: false; want: true")
@@ -73,7 +75,7 @@ func TestErrorOnInvalidCodeTheme(t *testing.T) {
 	// Ensure invalidTheme does not exist in set
 	// of valid themes.
 	invalidTheme := "asdf"
-	for _, th := range themes {
+	for _, th := range styles.Names() {
 		if th == invalidTheme {
 			t.Errorf("%s should not included in themes.", invalidTheme)
 		}

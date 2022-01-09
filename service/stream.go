@@ -5,19 +5,22 @@ import (
 	"log"
 	"net/http"
 	"path/filepath"
-	"strings"
 	"sync"
 	"time"
 
 	"github.com/vui-chee/mdpreview/internal/sys"
 	conf "github.com/vui-chee/mdpreview/service/config"
+
+	"github.com/gorilla/websocket"
 )
 
 const (
 	ENDLESS_LOOP = -1
 
+	// Messages for each connection.
 	write_success = "success"
 	error_read    = "error_read"
+	close_conn    = "close"
 )
 
 // This struct is used to store all information used during testing.
@@ -39,14 +42,73 @@ func NewTestHarness() testHarness {
 	}
 }
 
-type conn struct {
-	Ch chan string
+// This interface is created following the API in
+// gorilla/websocket. Only contains methods that will
+// be used in the tool.
+//
+// This allows the connection to be mocked during
+// testing.
+type WebsocketConn interface {
+	Close() error
+	ReadMessage() (messageType int, p []byte, err error)
+	WriteMessage(messageType int, data []byte) error
 }
 
-func NewConn() *conn {
-	return &conn{
-		Ch: make(chan string),
+type conn struct {
+	// This channel acts as an event queue.
+	// Any event that occurs on the WS connection may
+	// trigger actions in other goroutines. So this
+	// channel help facilitate that.
+	Ch chan string
+
+	// gorilla/websocket
+	Conn WebsocketConn
+}
+
+func (c *conn) Trigger(event string) error {
+	if event == write_success ||
+		event == close_conn ||
+		event == error_read {
+		c.Ch <- event
+		return nil
 	}
+	return fmt.Errorf("No such connection event.")
+}
+
+func NewConn(c WebsocketConn) *conn {
+	return &conn{
+		Ch:   make(chan string),
+		Conn: c,
+	}
+}
+
+func (c *conn) SendText(content []byte) error {
+	return c.Conn.WriteMessage(websocket.TextMessage, content)
+}
+
+func (c *conn) SendConvertedMarkdownFromFile(filepath string) error {
+	content, err := convertMarkdownToHTML(filepath)
+	if err != nil {
+		return err
+	}
+
+	err = c.SendText(content)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *conn) OnReadConn(event string) (int, []byte, error) {
+	ty, data, err := c.Conn.ReadMessage()
+
+	// NOTE: someone must receive this otherwise, this will block.
+	c.Trigger(event)
+
+	if err != nil {
+		return -1, nil, err
+	}
+	return ty, data, err
 }
 
 type connCluster struct {
@@ -81,11 +143,11 @@ type FileWatcher struct {
 	harness testHarness
 }
 
-func (f *FileWatcher) AddConn(filepath string, modtime time.Time) *conn {
+func (f *FileWatcher) AddConn(filepath string, modtime time.Time, c WebsocketConn) *conn {
 	f.lock.Lock()
 	defer f.lock.Unlock()
 
-	newConn := NewConn()
+	newConn := NewConn(c)
 	cluster, ok := f.files[filepath]
 	if !ok {
 		f.files[filepath] = &connCluster{
@@ -124,6 +186,9 @@ func (f *FileWatcher) DeleteConn(filepath string, targetConn *conn) error {
 		return fmt.Errorf("Connection %v not found for %s", targetConn, filepath)
 	}
 
+	// Closes underlying network connection.
+	cluster.conns[index].Conn.Close()
+
 	updatedConnections := append(cluster.conns[:index], cluster.conns[index+1:]...)
 	if len(updatedConnections) == 0 {
 		// No more connections to this file, so drop key-value pair.
@@ -135,32 +200,64 @@ func (f *FileWatcher) DeleteConn(filepath string, targetConn *conn) error {
 	return nil
 }
 
-func (f *FileWatcher) RefreshContent(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Connection", "keep-alive")
-	w.Header().Set("Content-Type", "text/event-stream")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+func (f *FileWatcher) CloseClusterConn(filepath string) {
+	cluster, ok := f.files[filepath]
+	if ok {
+		for _, c := range cluster.conns {
+			c.Conn.Close()
+		}
+	}
 
+	delete(f.files, filepath)
+}
+
+func (f *FileWatcher) CloseAllConn() {
+	f.lock.Lock()
+	defer f.lock.Unlock()
+
+	// Delete all clusters.
+	for filepath := range f.files {
+		f.CloseClusterConn(filepath)
+	}
+}
+
+func (f *FileWatcher) RefreshContent(w http.ResponseWriter, r *http.Request) {
 	// Get the path relative to the directory where the tool is run.
 	// '+1' to skip the leading '/'.
 	uri := r.URL.Path
 	filepath, err := filepath.EvalSymlinks(uri[len(conf.RefreshPrefix)+1:])
 	if err != nil {
-		w.Write([]byte("event:userdisconnect\n\n"))
 		return
 	}
 
 	modtime, err := sys.Modtime(filepath)
 	if err != nil {
-		w.Write([]byte("event:userdisconnect\n\n"))
 		return
 	}
-	conn := f.AddConn(filepath, modtime)
+
+	// Create new websocket connection.
+	var upgrader = websocket.Upgrader{}
+	wsConn, err := upgrader.Upgrade(w, r, nil)
+	// Add mapping storing the connection.
+	conn := f.AddConn(filepath, modtime, wsConn)
+	defer f.DeleteConn(filepath, conn) // Close() will be called here
 
 	// Read first page
-	if err := readAndSendMarkdown(w, filepath); err != nil {
+	if err := conn.SendConvertedMarkdownFromFile(filepath); err != nil {
 		log.Fatalln(err)
 		return
 	}
+
+	// Listen for close connection.
+	//
+	// NOTE:
+	// You must listen inside another goroutine, since
+	// ReadMessage() is blocking.
+	go func() {
+		for {
+			conn.OnReadConn(close_conn)
+		}
+	}()
 
 	for {
 		// Used during testing only.
@@ -172,29 +269,35 @@ func (f *FileWatcher) RefreshContent(w http.ResponseWriter, r *http.Request) {
 
 		select {
 		case msg := <-conn.Ch:
-			// During such error, file will be deleted from
-			// trackFiles & messageChannels during Watch().
 			if msg == error_read {
-				w.Write([]byte("event:userdisconnect\n\n"))
+				// During such error, file will be deleted from
+				// trackFiles & messageChannels during Watch().
+				log.Printf("Error watching file. %s is either deleted/renamed/moved.\n", filepath)
 				return
 			}
 
 			if msg == write_success {
-				if err := readAndSendMarkdown(w, filepath); err != nil {
+				if err := conn.SendConvertedMarkdownFromFile(filepath); err != nil {
 					log.Fatalln(err)
 					continue
 				}
 			}
-		case <-r.Context().Done():
-			f.DeleteConn(filepath, conn)
-			log.Println("User closed tab. This connection is closed.")
-			return
+
+			if msg == close_conn {
+				log.Printf("Closed tab for %s\n", filepath)
+				return
+			}
 		}
 	}
 }
 
 func (f *FileWatcher) Watch() {
 	go func() {
+		// Only relevant during testing.
+		if f.harness.useWaitGroup {
+			f.harness.wg.Done()
+		}
+
 		for {
 			time.Sleep(f.watchInv)
 
@@ -209,9 +312,9 @@ func (f *FileWatcher) Watch() {
 						// Signal each connection to this file that the
 						// file cannot be found.
 						for _, conn := range cluster.conns {
-							conn.Ch <- error_read
+							conn.Trigger(error_read)
 						}
-						delete(f.files, filepath)
+						f.CloseClusterConn(filepath)
 						log.Printf("Watch(): %s cannot be found\n", filepath)
 						continue
 					}
@@ -224,7 +327,7 @@ func (f *FileWatcher) Watch() {
 						cluster.Lastmodifed = newModtime
 
 						for _, conn := range cluster.conns {
-							conn.Ch <- write_success
+							conn.Trigger(write_success)
 						}
 					}
 				}
@@ -245,43 +348,4 @@ func NewFileWatcher(useHarness bool) *FileWatcher {
 	}
 
 	return watcher
-}
-
-func readAndSendMarkdown(w http.ResponseWriter, filepath string) error {
-	content, err := convertMarkdownToHTML(filepath)
-	if err != nil {
-		return err
-	}
-	w.Write(eventStreamFormat(string(content)))
-	w.(http.Flusher).Flush()
-	return nil
-}
-
-// In order for the client side to receive server triggered
-// event messages, the data sent must be formatted in a specific
-// way, otherwise, the data will be dropped. For event streams,
-// messages within this stream are represented as a sequence
-// of bytes separated by a newline. The data must also be encoded
-// in UTF-8.
-//
-// See https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events
-// for more information.
-func eventStreamFormat(data string) []byte {
-	if len(data) <= 0 {
-		return []byte("")
-	}
-
-	var eventPayload string
-	dataLines := strings.Split(data, "\n")
-
-	for _, line := range dataLines {
-		if len(line) == 0 {
-			// This is just a single newline.
-			eventPayload = eventPayload + "data:\n"
-		} else {
-			eventPayload = eventPayload + "data:" + line + "\n"
-		}
-	}
-
-	return []byte(eventPayload + "\n")
 }
