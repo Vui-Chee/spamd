@@ -259,7 +259,7 @@ func TestTriggerWriteOnWatch(t *testing.T) {
 
 	// Space out the write time, otherwise, the difference in
 	// time may be negligible.
-	time.Sleep(1 * time.Second)
+	time.Sleep(30 * time.Millisecond)
 	file.WriteString("Next paragraph.")
 
 	// Check if channel is written to with correct message.
@@ -295,7 +295,7 @@ func TestTriggerErrorOnWatch(t *testing.T) {
 	watcher.harness.wg.Wait() // wait for goroutine to start.
 
 	// Now drop file, should trigger err during sys.Modtime
-	time.Sleep(1 * time.Second)
+	time.Sleep(30 * time.Millisecond)
 	os.Remove(file.Name())
 
 	for _, conn := range watcher.files[filepath].conns {

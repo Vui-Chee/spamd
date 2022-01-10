@@ -34,6 +34,67 @@
   </body>
 
   <script type="text/javascript">
+    // Set the name of the hidden property and the change event for visibility
+    var hidden, visibilityChange;
+    if (typeof document.hidden !== "undefined") {
+      // Opera 12.10 and Firefox 18 and later support
+      hidden = "hidden";
+      visibilityChange = "visibilitychange";
+    } else if (typeof document.msHidden !== "undefined") {
+      hidden = "msHidden";
+      visibilityChange = "msvisibilitychange";
+    } else if (typeof document.webkitHidden !== "undefined") {
+      hidden = "webkitHidden";
+      visibilityChange = "webkitvisibilitychange";
+    }
+
+    if (
+      typeof document.addEventListener === "undefined" ||
+      hidden === undefined
+    ) {
+      alert(
+        "This tool requires a browser, such as Google Chrome or Firefox, that supports the Page Visibility API."
+      );
+    }
+
+    // This connection is used to receive new markdown content from
+    // server whenever a file is modified.
+    let stream;
+    function Stream(handlers) {
+      this.ws = new WebSocket(
+        "ws://" + location.host + "{{.RefreshPrefix}}{{.URI}}"
+      );
+      Object.keys(handlers).forEach((name) => {
+        this.ws[name] = handlers[name];
+      });
+      this.close = () => {
+        this.ws.close();
+        this.ws.removeEventListener("message", this.ws.onmessage);
+        this.ws.removeEventListener("error", this.ws.onerror);
+      };
+    }
+
+    let hasLoadedContent = false;
+    function setupNewStream() {
+      if (!hasLoadedContent) {
+        hasLoadedContent = true;
+        stream = new Stream({
+          onmessage: refreshContent,
+          onerror: cleanup,
+          onclose: cleanup,
+        });
+      }
+    }
+
+    // Create connection only once visited.
+    //
+    // Otherwise, if the tab has not been visited, do not
+    // call `refresh` API. Only static assets are loaded first.
+    window.addEventListener(visibilityChange, () => setupNewStream());
+    if (document.visibilityState === "visible") {
+      setupNewStream();
+    }
+
     function removeBulletPointsFromTaskListItem() {
       // Remove bullet points from task list items.
       // Each task item will have a checkbox type attribute.
@@ -47,13 +108,6 @@
       });
     }
 
-    let heartbeatInterval; // delay between each ping to the server.
-    const host = location.host;
-    const ws = new WebSocket("ws://" + host + "{{.RefreshPrefix}}{{.URI}}");
-    ws.onmessage = refreshContent;
-    ws.onerror = cleanup;
-    ws.onclose = cleanup;
-
     function refreshContent(event) {
       let { data } = event;
       let contentDiv = document.querySelector(".markdown-body");
@@ -63,10 +117,7 @@
     }
 
     function cleanup(event) {
-      // Stop trying to contact server.
-      ws.close();
-      ws.removeEventListener("message", refreshContent);
-      ws.removeEventListener("error", cleanup);
+      stream.close();
 
       // Change content area with an error message saying the server is closed.
       let contentDiv = document.querySelector(".markdown-body");
