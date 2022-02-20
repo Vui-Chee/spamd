@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"testing"
 
-	testtools "github.com/vui-chee/mdpreview/internal/testing"
+	testtools "github.com/vui-chee/spamd/internal/testing"
 )
 
 type TestDelegate struct {
@@ -40,7 +40,7 @@ func TestExecuteByOS(t *testing.T) {
 var testdir string
 
 const (
-	prefix = "mdpreview-test-"
+	prefix = "spamd-test-"
 )
 
 var testFiles = []string{

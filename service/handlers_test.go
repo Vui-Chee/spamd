@@ -9,7 +9,7 @@ import (
 	"sync"
 	"testing"
 
-	testtools "github.com/vui-chee/mdpreview/internal/testing"
+	testtools "github.com/vui-chee/spamd/internal/testing"
 )
 
 var (

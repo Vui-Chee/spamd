@@ -1,4 +1,4 @@
-module github.com/vui-chee/mdpreview
+module github.com/vui-chee/spamd
 
 go 1.17
 

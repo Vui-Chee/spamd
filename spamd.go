@@ -6,9 +6,9 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/vui-chee/mdpreview/internal/browser"
-	"github.com/vui-chee/mdpreview/internal/sys"
-	"github.com/vui-chee/mdpreview/service"
+	"github.com/vui-chee/spamd/internal/browser"
+	"github.com/vui-chee/spamd/internal/sys"
+	"github.com/vui-chee/spamd/service"
 )
 
 const (
@@ -16,7 +16,7 @@ const (
 
 	protocol = "http://"
 
-	usage = `Usage: mdpreview [options...] <path-to-markdown>
+	usage = `Usage: spamd [options...] <path-to-markdown>
 
 Options:
 	-p Port number (fixed port, otherwise a RANDOM port is supplied)
@@ -25,7 +25,7 @@ Options:
 	-nb Do not open browser if this is set true (default: false)
 
 Additionally, if you want to persist any of this configs, you can
-create a .mdpreview JSON file at your ROOT directory containing:
+create a .spamd JSON file at your ROOT directory containing:
 
 	{
 	  "theme": "dark",

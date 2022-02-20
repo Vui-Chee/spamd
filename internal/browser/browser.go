@@ -3,7 +3,7 @@ package browser
 import (
 	"os/exec"
 
-	"github.com/vui-chee/mdpreview/internal/sys"
+	"github.com/vui-chee/spamd/internal/sys"
 )
 
 type BrowserDelegate struct {

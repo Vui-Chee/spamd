@@ -13,8 +13,8 @@ import (
 
 	"github.com/gorilla/websocket"
 
-	testutils "github.com/vui-chee/mdpreview/internal/testing"
-	conf "github.com/vui-chee/mdpreview/service/config"
+	testutils "github.com/vui-chee/spamd/internal/testing"
+	conf "github.com/vui-chee/spamd/service/config"
 )
 
 func TestConstructFileWatcher(t *testing.T) {

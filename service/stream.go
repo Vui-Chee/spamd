@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/vui-chee/mdpreview/internal/sys"
-	conf "github.com/vui-chee/mdpreview/service/config"
+	"github.com/vui-chee/spamd/internal/sys"
+	conf "github.com/vui-chee/spamd/service/config"
 
 	"github.com/gorilla/websocket"
 )

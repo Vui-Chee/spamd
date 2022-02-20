@@ -9,7 +9,7 @@ import (
 	"sync"
 	"testing"
 
-	conf "github.com/vui-chee/mdpreview/service/config"
+	conf "github.com/vui-chee/spamd/service/config"
 )
 
 var (

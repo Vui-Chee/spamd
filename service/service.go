@@ -9,13 +9,13 @@ import (
 	"os"
 	"regexp"
 
-	"github.com/vui-chee/mdpreview/internal/sys"
-	conf "github.com/vui-chee/mdpreview/service/config"
-	m "github.com/vui-chee/mdpreview/service/middleware"
+	"github.com/vui-chee/spamd/internal/sys"
+	conf "github.com/vui-chee/spamd/service/config"
+	m "github.com/vui-chee/spamd/service/middleware"
 )
 
 const (
-	TOOL_NAME = "mdpreview"
+	TOOL_NAME = "spamd"
 
 	// Remaining unmatched routes go to default html handler.
 	// For other static routes, see config package.
