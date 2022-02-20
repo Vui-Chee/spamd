@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/yuin/goldmark"
+	"github.com/yuin/goldmark-emoji"
 	"github.com/yuin/goldmark-highlighting"
 	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/parser"
@@ -23,9 +24,11 @@ var (
 			goldmark.WithExtensions(
 				extension.GFM,
 				extension.TaskList,
+				extension.Footnote,
 				highlighting.NewHighlighting(
 					highlighting.WithStyle(serviceConfig.CodeBlockTheme), // Code highlight colors
 				),
+				emoji.Emoji,
 			),
 			goldmark.WithParserOptions(
 				parser.WithAutoHeadingID(),

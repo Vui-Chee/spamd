@@ -1,7 +1,7 @@
 package testing
 
 import (
-	"bytes"
+	"bufio"
 	"log"
 	"os"
 )
@@ -12,9 +12,20 @@ func NoTimestamp() {
 }
 
 func CaptureLog(f func()) string {
-	var buf bytes.Buffer
-	log.SetOutput(&buf)
-	f()
-	log.SetOutput(os.Stderr)
-	return buf.String()
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		return ""
+	}
+	log.SetOutput(writer)
+	defer func() {
+		reader.Close()
+		writer.Close()
+		log.SetOutput(os.Stderr)
+	}()
+
+	scanner := bufio.NewScanner(reader)
+	go f()
+	scanner.Scan()
+
+	return scanner.Text()
 }

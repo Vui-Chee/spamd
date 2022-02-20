@@ -1,7 +1,6 @@
 package service
 
 import (
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -183,17 +182,17 @@ func TestCloseConnection(t *testing.T) {
 	// Deactivate timestamp.
 	testutils.NoTimestamp()
 
-	got := testutils.CaptureLog(func() {
-		cluster := watcher.files[filepath]
-		// Send close_conn event to target connection.
-		for _, conn := range cluster.conns {
-			conn.Trigger(close_conn)
-		}
-	})
+	cluster := watcher.files[filepath]
+	for _, conn := range cluster.conns {
+		conn.Trigger(close_conn)
+	}
 
-	want := fmt.Sprintf("Closed tab for %s\n", filepath)
-	if got != want {
-		t.Errorf("got %s; want %s", got, want)
+	want := close_conn
+	for _, conn := range cluster.conns {
+		got := <-conn.Ch
+		if got != want {
+			t.Errorf("got %s; want %s", got, want)
+		}
 	}
 }
 
