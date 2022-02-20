@@ -3,7 +3,10 @@ package service
 import (
 	"embed"
 	"html/template"
+	"io"
+	"log"
 	"net/http"
+	"os"
 	"path"
 
 	conf "github.com/vui-chee/mdpreview/service/config"
@@ -18,6 +21,32 @@ var (
 	// where the static files are actually stored.
 	fsPrefix string = "build"
 )
+
+func serveLocalImage(w http.ResponseWriter, r *http.Request) {
+	wd, err := os.Getwd()
+	if err != nil {
+		log.Fatalf("Failed to get working directory. %+v\n", err)
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	// Opens the image file relative to current directory.
+	img, err := os.Open(path.Join(wd, r.URL.Path))
+	if err != nil {
+		log.Printf("%+v\n", err)
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	defer img.Close()
+
+	ext := path.Ext(r.URL.Path)
+	if len(ext) > 0 && ext[0] == '.' {
+		// skip '.'
+		ext = ext[1:]
+	}
+	w.Header().Set("Content-Type", "image/"+ext)
+	io.Copy(w, img)
+}
 
 func serveCSS(w http.ResponseWriter, r *http.Request) {
 	githubMarkdownCSS, err := f.ReadFile(fsPrefix + "/" + "styles.css")

@@ -67,6 +67,7 @@ func Start(l net.Listener) {
 		AdditionalCheck: redirectIfNotMarkdown,
 	}
 	mux.HandleFunc(conf.StylesPrefix, serveCSS)
+	mux.HandleFunc(conf.ImageRegex, serveLocalImage)
 	mux.HandleFunc(conf.RefreshPattern(), watcher.RefreshContent)
 	mux.HandleFunc(AllElse, serveHTML)
 	wrapper := m.NewLogger(&mux)
@@ -99,8 +100,10 @@ func redirectIfNotMarkdown(path string) bool {
 		uri = path
 	}
 
+	imageRegex, _ := regexp.Compile(conf.ImageRegex)
 	cwd, _ := os.Getwd()
-	if !sys.IsFileWithExt(cwd+uri, ".md") {
+	// Skip non-markdown and non-image files.
+	if !sys.IsFileWithExt(cwd+uri, ".md") && !imageRegex.Match([]byte(uri)) {
 		return false
 	}
 

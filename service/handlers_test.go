@@ -2,8 +2,10 @@ package service
 
 import (
 	"embed"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"sync"
 	"testing"
 
@@ -133,5 +135,61 @@ func TestServeHTML_ErrOnMissingFS(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 	if status := rr.Code; status != http.StatusNotFound {
 		t.Errorf("serveCSS returned wrong status code. Expected: %d. Got: %d.", http.StatusOK, status)
+	}
+}
+
+func TestServeLocalImage(t *testing.T) {
+	dir, err := ioutil.TempDir(".", "")
+	if err != nil {
+		t.Error("Failed to create tempdir.", err)
+		t.FailNow()
+	}
+	defer os.RemoveAll(dir)
+	file, err := ioutil.TempFile(dir, "")
+	if err != nil {
+		t.Error("Failed to create tempfile.")
+		t.FailNow()
+	}
+	fakeContents := "dummy-image-contents"
+	file.Write([]byte(fakeContents))
+
+	req, err := http.NewRequest("GET", file.Name(), nil)
+	if err != nil {
+		t.Errorf("Error creating a new request: %v", err)
+	}
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(serveLocalImage)
+	handler.ServeHTTP(rr, req)
+
+	if status := rr.Code; status == http.StatusNotFound {
+		t.Errorf("serveLocalImage returned 404.")
+		t.FailNow()
+	}
+	contentType := rr.Header().Get("Content-Type")
+	if contentType != "image/" {
+		t.Errorf("got %s; want %s\n", contentType, "image/")
+		t.FailNow()
+	}
+	content := rr.Body.String()
+	if content != fakeContents {
+		t.Errorf("got %s; want %s\n", content, fakeContents)
+		t.FailNow()
+	}
+}
+
+func TestServeLocalImageNoSuchFile404(t *testing.T) {
+	req, err := http.NewRequest("GET", "/no-such-file.png", nil)
+	if err != nil {
+		t.Errorf("Error creating a new request: %v", err)
+	}
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(serveLocalImage)
+	handler.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusNotFound {
+		t.Errorf("serveLocalImage returned %s.", rr.Result().Status)
+		t.FailNow()
 	}
 }
