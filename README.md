@@ -3,6 +3,8 @@
 spamd is a tool which allows you to **mass preview** Github flavoured markdowns before
 commiting them.
 
+![demo](/assets/demo.png)
+
 ## Features
 
 * See rendered markdown as you edit
