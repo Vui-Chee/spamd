@@ -7,60 +7,37 @@ import (
 	"os/signal"
 
 	"github.com/vui-chee/spamd/internal/browser"
+	"github.com/vui-chee/spamd/internal/options"
 	"github.com/vui-chee/spamd/internal/sys"
 	"github.com/vui-chee/spamd/service"
 )
 
 const (
-	version    = "0.1.1"
-	protocol   = "http://"
-	beginUsage = "Usage: spamd [options...] <path-to-markdown>\nOptions:"
-	endUsage   = `Additionally, if you want to persist any of this configs, you can
-create a .spamd JSON file at your ROOT directory containing:
-
-	{
-	  "theme": "dark",
-	  "codeblock": "fruity",
-	  "port": 3000
-	}
-
-This is just an example. You can change/omit any of the fields.
-`
-)
-
-// When applied, these value(s) will override as existing configuration.
-var (
-	showVersion = flag.Bool("v", false, "Display version and exit")
-	nobrowser   = flag.Bool("nb", false, "Do not open browser if this is set true (default: false)")
-
-	// These have default empty string values as ServiceConfig will supply
-	// the defaults.
-	theme     = flag.String("t", "", "Display markdown HTML in \"dark\" or \"light\" theme. (default: light)")
-	codestyle = flag.String("c", "", "The style you want to apply to your code blocks. (default: monokai)")
-	port      = flag.Int("p", 0, "Port number (fixed port, otherwise a RANDOM port is supplied)")
+	version  = "0.1.1"
+	protocol = "http://"
 )
 
 func main() {
 	closeOnCtrlC()
 
-	flag.Usage = printUsage
-	flag.Parse()
+	opts := options.ParseOptions()
 
-	if *showVersion {
+	if opts.ShowVersion {
 		fmt.Println(version)
 		return
 	}
 
-	service.OverrideConfig(*theme, *codestyle)
+	service.OverrideConfig(opts.Theme, opts.CodeStyle)
 
-	l, err := service.Listen(*port)
+	l, err := service.Listen(opts.Port)
 	if err != nil {
 		sys.ErrorAndExit(err.Error())
 	}
+	baseUrl := protocol + l.Addr().String()
 
-	browser.MassOpen(protocol+l.Addr().String(), *nobrowser)
+	browser.MassOpen(baseUrl, opts.NoBrowser)
 
-	printAdditionalInfo(protocol + l.Addr().String())
+	printAdditionalInfo(baseUrl)
 	service.Start(l)
 }
 
@@ -75,12 +52,6 @@ func closeOnCtrlC() {
 		service.Shutdown()
 		os.Exit(1)
 	}()
-}
-
-func printUsage() {
-	sys.Eprintf("%s\n\n", beginUsage)
-	flag.PrintDefaults()
-	sys.Eprintf("\n%s", endUsage)
 }
 
 func printAdditionalInfo(address string) {
