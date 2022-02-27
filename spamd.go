@@ -12,17 +12,17 @@ import (
 )
 
 const (
+	version         = "0.1.1"
 	defaultMarkdown = "README.md"
-
-	protocol = "http://"
-
-	usage = `Usage: spamd [options...] <path-to-markdown>
+	protocol        = "http://"
+	usage           = `Usage: spamd [options...] <path-to-markdown>
 
 Options:
 	-p Port number (fixed port, otherwise a RANDOM port is supplied)
 	-t Display markdown HTML in "dark" or "light" theme. (default: light)
 	-c The style you want to apply to your code blocks. (default: monokai)
 	-nb Do not open browser if this is set true (default: false)
+        -v Display version and exit
 
 Additionally, if you want to persist any of this configs, you can
 create a .spamd JSON file at your ROOT directory containing:
@@ -39,7 +39,8 @@ This is just an example. You can change/omit any of the fields.
 
 // When applied, these value(s) will override as existing configuration.
 var (
-	port = flag.Int("p", 0, "port")
+	port        = flag.Int("p", 0, "port")
+	showVersion = flag.Bool("v", false, "Version")
 
 	// These have default empty string values as ServiceConfig will supply
 	// the defaults.
@@ -58,6 +59,12 @@ func main() {
 	}
 
 	flag.Parse()
+
+	if *showVersion {
+		fmt.Println(version)
+		return
+	}
+
 	service.OverrideConfig(*theme, *codestyle)
 
 	var filepath string = defaultMarkdown
