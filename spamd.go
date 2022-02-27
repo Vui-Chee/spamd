@@ -12,11 +12,10 @@ import (
 )
 
 const (
-	version         = "0.1.1"
-	defaultMarkdown = "README.md"
-	protocol        = "http://"
-	beginUsage      = "Usage: spamd [options...] <path-to-markdown>\nOptions:"
-	endUsage        = `Additionally, if you want to persist any of this configs, you can
+	version    = "0.1.1"
+	protocol   = "http://"
+	beginUsage = "Usage: spamd [options...] <path-to-markdown>\nOptions:"
+	endUsage   = `Additionally, if you want to persist any of this configs, you can
 create a .spamd JSON file at your ROOT directory containing:
 
 	{
@@ -59,32 +58,9 @@ func main() {
 		sys.ErrorAndExit(err.Error())
 	}
 
-	var filepath string = defaultMarkdown
-	if flag.NArg() >= 1 {
-		for i := 0; i < len(flag.Args()); i++ {
-			filepath := flag.Args()[i]
+	browser.MassOpen(protocol+l.Addr().String(), *nobrowser)
 
-			if !sys.IsFileWithExt(filepath, ".md") {
-				sys.Eprintf("%s is not a markdown document.\n", filepath)
-			} else if !sys.Exists(filepath) {
-				sys.Eprintf("%s does not exist.\n", filepath)
-			} else {
-				if !*nobrowser {
-					go func() {
-						sys.Exec(browser.Commands(protocol + l.Addr().String() + "/" + filepath))
-					}()
-				}
-			}
-		}
-	} else {
-		if !*nobrowser && sys.IsFileWithExt(filepath, ".md") && sys.Exists(filepath) {
-			sys.Exec(browser.Commands(protocol + l.Addr().String() + "/" + filepath))
-		}
-	}
-
-	fmt.Printf("Visit your markdown at %s/{path-to-markdown}.\n\n", protocol+l.Addr().String())
-	fmt.Println("{path-to-markdown} can be a relative path from current directory.")
-
+	printAdditionalInfo(protocol + l.Addr().String())
 	service.Start(l)
 }
 
@@ -105,6 +81,13 @@ func printUsage() {
 	sys.Eprintf("%s\n\n", beginUsage)
 	flag.PrintDefaults()
 	sys.Eprintf("\n%s", endUsage)
+}
+
+func printAdditionalInfo(address string) {
+	fmt.Printf(`Visit your markdown at %s/{path-to-markdown}.
+
+{path-to-markdown} can be a relative path from current directory.
+`, address)
 }
 
 func exitAfterUsage(msg string) {
