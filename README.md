@@ -29,27 +29,6 @@ Otherwise, if you want to open specific markdown file(s), you can do so by:
 
 For all other features, run `spamd --help`.
 
-```
-Usage: spamd [options...] <path-to-markdown>
-
-Options:
-        -p Port number (fixed port, otherwise a RANDOM port is supplied)
-        -t Display markdown HTML in "dark" or "light" theme. (default: light)
-        -c The style you want to apply to your code blocks. (default: monokai)
-        -nb Do not open browser if this is set true (default: false)
-
-Additionally, if you want to persist any of this configs, you can
-create a .spamd JSON file at your ROOT directory containing:
-
-        {
-          "theme": "dark",
-          "codeblock": "fruity",
-          "port": 3000
-        }
-
-This is just an example. You can change/omit any of the fields.
-```
-
 ## Development
 
 ### Run
