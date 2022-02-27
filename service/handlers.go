@@ -13,13 +13,13 @@ import (
 )
 
 var (
-	//go:embed build
+	//go:embed frontend
 	f embed.FS
 
 	// Folder where static files are stored (relative to this directory).
 	// This variable is overwritten during testing with the folder
 	// where the static files are actually stored.
-	fsPrefix string = "build"
+	fsPrefix string = "frontend"
 )
 
 func serveLocalImage(w http.ResponseWriter, r *http.Request) {

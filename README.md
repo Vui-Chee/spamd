@@ -7,7 +7,7 @@ commiting them.
 
 ## Features
 
-* See rendered markdown as you edit
+* Preview rendered markdowns as you edit
 * Open multiple markdown documents easily (using your default browser)
 * Only render contents when you visit tab/window
 * Can change code block color theme :rainbow:
@@ -47,17 +47,18 @@ This is just an example. You can change/omit any of the fields.
 
 ## Development
 
-```
-# Initial setup (must run once)
-chmod +x scripts/update-and-run.sh
-./scripts/update-and-run.sh
+### Run
 
-# Normal run
-go run spamd.go
+`go run spamd.go`
 
-# Building
-go build -ldflags="-s -w"
-```
+### Building
+
+`go build -ldflags="-s -w"`
+
+### Frontend 
+
+The static frontend files used will be located inside `service/frontend`. The css
+is generated with [generate-github-markdown-css](https://github.com/sindresorhus/generate-github-markdown-css) package along with customizations.
 
 ## Contributing
 
