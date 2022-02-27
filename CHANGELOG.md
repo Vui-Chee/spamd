@@ -1,3 +1,13 @@
+## 0.1.1
+
+### New Features
+
+* Add `-v` option to display version
+
+### Bug Fixes
+
+* Address installation (`go get ...` or `go install ...`) failure due to missing static folder
+
 ## 0.1.0
 
 Initial release.
