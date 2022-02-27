@@ -9,6 +9,8 @@ import (
 	"os"
 	"regexp"
 
+	"github.com/vui-chee/spamd/internal/browser"
+	"github.com/vui-chee/spamd/internal/options"
 	"github.com/vui-chee/spamd/internal/sys"
 	conf "github.com/vui-chee/spamd/service/config"
 	m "github.com/vui-chee/spamd/service/middleware"
@@ -20,6 +22,9 @@ const (
 	// Remaining unmatched routes go to default html handler.
 	// For other static routes, see config package.
 	AllElse = "^/.+"
+
+	// Everything is served locally.
+	protocol = "http://"
 )
 
 // Set the configs for this service as a global,
@@ -108,4 +113,31 @@ func redirectIfNotMarkdown(path string) bool {
 	}
 
 	return true
+}
+
+func printAdditionalInfo(address string) {
+	fmt.Printf(`Visit your markdown at %s/{path-to-markdown}.
+
+{path-to-markdown} can be a relative path from current directory.
+`, address)
+}
+
+func Run(opts *options.Options, version string) {
+	if opts.ShowVersion {
+		fmt.Println(version)
+		os.Exit(0)
+	}
+
+	OverrideConfig(opts.Theme, opts.CodeStyle)
+
+	l, err := Listen(opts.Port)
+	if err != nil {
+		sys.ErrorAndExit(err.Error())
+	}
+	baseUrl := protocol + l.Addr().String()
+
+	browser.MassOpen(baseUrl, opts.NoBrowser)
+
+	printAdditionalInfo(baseUrl)
+	Start(l)
 }
