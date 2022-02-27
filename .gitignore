@@ -17,5 +17,5 @@
 # Go workspace file
 go.work
 
-# Where the final frontend build is placed for embedding.
-build
+# Dependency directories
+node_modules/
