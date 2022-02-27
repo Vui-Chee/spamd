@@ -18,13 +18,12 @@ func main() {
 }
 
 func closeOnCtrlC() {
-	// Capture ctrl-c to close server.
 	var interrupt = make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
 
-	// Close all websocket connections before exiting.
 	go func() {
 		<-interrupt
+		// Close all websocket connections before exiting.
 		service.Shutdown()
 		os.Exit(1)
 	}()
