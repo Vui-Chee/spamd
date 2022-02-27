@@ -15,16 +15,8 @@ const (
 	version         = "0.1.1"
 	defaultMarkdown = "README.md"
 	protocol        = "http://"
-	usage           = `Usage: spamd [options...] <path-to-markdown>
-
-Options:
-	-p Port number (fixed port, otherwise a RANDOM port is supplied)
-	-t Display markdown HTML in "dark" or "light" theme. (default: light)
-	-c The style you want to apply to your code blocks. (default: monokai)
-	-nb Do not open browser if this is set true (default: false)
-        -v Display version and exit
-
-Additionally, if you want to persist any of this configs, you can
+	beginUsage      = "Usage: spamd [options...] <path-to-markdown>\nOptions:"
+	endUsage        = `Additionally, if you want to persist any of this configs, you can
 create a .spamd JSON file at your ROOT directory containing:
 
 	{
@@ -39,14 +31,14 @@ This is just an example. You can change/omit any of the fields.
 
 // When applied, these value(s) will override as existing configuration.
 var (
-	port        = flag.Int("p", 0, "port")
-	showVersion = flag.Bool("v", false, "Version")
+	showVersion = flag.Bool("v", false, "Display version and exit")
+	nobrowser   = flag.Bool("nb", false, "Do not open browser if this is set true (default: false)")
 
 	// These have default empty string values as ServiceConfig will supply
 	// the defaults.
-	theme     = flag.String("t", "", "Change light/dark theme.")
-	codestyle = flag.String("c", "", "Change the code block style.")
-	nobrowser = flag.Bool("nb", false, "Use this option to disable open browser on start.")
+	theme     = flag.String("t", "", "Display markdown HTML in \"dark\" or \"light\" theme. (default: light)")
+	codestyle = flag.String("c", "", "The style you want to apply to your code blocks. (default: monokai)")
+	port      = flag.Int("p", 0, "Port number (fixed port, otherwise a RANDOM port is supplied)")
 )
 
 func main() {
@@ -54,10 +46,7 @@ func main() {
 	var interrupt = make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
 
-	flag.Usage = func() {
-		sys.Eprintf(usage)
-	}
-
+	flag.Usage = printUsage
 	flag.Parse()
 
 	if *showVersion {
@@ -106,6 +95,12 @@ func main() {
 	}()
 
 	service.Start(l)
+}
+
+func printUsage() {
+	sys.Eprintf("%s\n\n", beginUsage)
+	flag.PrintDefaults()
+	sys.Eprintf("\n%s", endUsage)
 }
 
 func exitAfterUsage(msg string) {
