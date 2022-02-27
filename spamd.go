@@ -42,9 +42,7 @@ var (
 )
 
 func main() {
-	// Capture ctrl-c to close server.
-	var interrupt = make(chan os.Signal, 1)
-	signal.Notify(interrupt, os.Interrupt)
+	closeOnCtrlC()
 
 	flag.Usage = printUsage
 	flag.Parse()
@@ -56,12 +54,12 @@ func main() {
 
 	service.OverrideConfig(*theme, *codestyle)
 
-	var filepath string = defaultMarkdown
 	l, err := service.Listen(*port)
 	if err != nil {
 		sys.ErrorAndExit(err.Error())
 	}
 
+	var filepath string = defaultMarkdown
 	if flag.NArg() >= 1 {
 		for i := 0; i < len(flag.Args()); i++ {
 			filepath := flag.Args()[i]
@@ -87,14 +85,20 @@ func main() {
 	fmt.Printf("Visit your markdown at %s/{path-to-markdown}.\n\n", protocol+l.Addr().String())
 	fmt.Println("{path-to-markdown} can be a relative path from current directory.")
 
+	service.Start(l)
+}
+
+func closeOnCtrlC() {
+	// Capture ctrl-c to close server.
+	var interrupt = make(chan os.Signal, 1)
+	signal.Notify(interrupt, os.Interrupt)
+
 	// Close all websocket connections before exiting.
 	go func() {
 		<-interrupt
 		service.Shutdown()
 		os.Exit(1)
 	}()
-
-	service.Start(l)
 }
 
 func printUsage() {
