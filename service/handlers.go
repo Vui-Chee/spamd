@@ -39,12 +39,20 @@ func serveLocalImage(w http.ResponseWriter, r *http.Request) {
 	}
 	defer img.Close()
 
+	contentType := "image/"
+
 	ext := path.Ext(r.URL.Path)
 	if len(ext) > 0 && ext[0] == '.' {
 		// skip '.'
 		ext = ext[1:]
 	}
-	w.Header().Set("Content-Type", "image/"+ext)
+
+	// svg+xml
+	if ext == "svg" {
+		contentType += ext + "+xml"
+	}
+
+	w.Header().Set("Content-Type", contentType)
 	io.Copy(w, img)
 }
 

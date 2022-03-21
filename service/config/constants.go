@@ -7,7 +7,7 @@ const (
 	StylesPrefix  = "/__/styles"
 
 	// Matches these image types.
-	ImageRegex = "^\\/.+.(png|jpg|gif|jpeg)$"
+	ImageRegex = "^\\/.+.(png|jpg|gif|jpeg|svg)$"
 )
 
 func RefreshPattern() string {
