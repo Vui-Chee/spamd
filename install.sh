@@ -30,7 +30,6 @@ has_bindir() {
 download() {
   platform=$1
   arch=$2
-	echo $BASE_URL/spamd_${platform}_${arch}
   curl --fail --location --output $BIN_DIR/spamd $BASE_URL/spamd_${platform}_${arch}
   chmod +x $BIN_DIR/spamd
 }
