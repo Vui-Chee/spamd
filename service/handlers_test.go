@@ -4,7 +4,6 @@ import (
 	"embed"
 	"io/ioutil"
 	"net/http"
-	"net/http/httptest"
 	"os"
 	"sync"
 	"testing"
@@ -33,14 +32,12 @@ func TestGetEmbeddedCSS(t *testing.T) {
 	// During testing, use this static testing folder instead.
 	f = testtools.MockFS
 
-	req, err := http.NewRequest("GET", "/styles", nil)
-	if err != nil {
-		t.Errorf("Error creating a new request: %v", err)
-	}
+	rr := testtools.MockRequest(t,
+		"GET",
+		"/styles",
+		http.HandlerFunc(serveCSS),
+	)
 
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(serveCSS)
-	handler.ServeHTTP(rr, req)
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("serveCSS returned wrong status code. Expected: %d. Got: %d.", http.StatusOK, status)
 	}
@@ -62,14 +59,12 @@ func TestServeCSS_ErrOnMissingFS(t *testing.T) {
 	// Change to non-existent folder
 	f = fakeFS
 
-	req, err := http.NewRequest("GET", "/styles", nil)
-	if err != nil {
-		t.Errorf("Error creating a new request: %v", err)
-	}
+	rr := testtools.MockRequest(t,
+		"GET",
+		"/styles",
+		http.HandlerFunc(serveCSS),
+	)
 
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(serveCSS)
-	handler.ServeHTTP(rr, req)
 	if status := rr.Code; status != http.StatusNotFound {
 		t.Errorf("serveCSS returned wrong status code. Expected: %d. Got: %d.", http.StatusOK, status)
 	}
@@ -86,14 +81,12 @@ func TestGetEmbeddedHTML(t *testing.T) {
 	serviceConfig.SetTheme("light")        // set test theme
 	defer serviceConfig.SetTheme(oldTheme) // Make sure to restore whatever theme.
 
-	req, err := http.NewRequest("GET", "/README.md", nil)
-	if err != nil {
-		t.Errorf("Error creating a new request: %v", err)
-	}
+	rr := testtools.MockRequest(t,
+		"GET",
+		"/README.md",
+		http.HandlerFunc(serveHTML),
+	)
 
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(serveHTML)
-	handler.ServeHTTP(rr, req)
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("serveHTML returned wrong status code. Expected: %d. Got: %d.", http.StatusOK, status)
 	}
@@ -125,14 +118,12 @@ func TestServeHTML_ErrOnMissingFS(t *testing.T) {
 	// Change to non-existent folder
 	f = fakeFS
 
-	req, err := http.NewRequest("GET", "/", nil)
-	if err != nil {
-		t.Errorf("Error creating a new request: %v", err)
-	}
+	rr := testtools.MockRequest(t,
+		"GET",
+		"/",
+		http.HandlerFunc(serveHTML),
+	)
 
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(serveHTML)
-	handler.ServeHTTP(rr, req)
 	if status := rr.Code; status != http.StatusNotFound {
 		t.Errorf("serveCSS returned wrong status code. Expected: %d. Got: %d.", http.StatusOK, status)
 	}
@@ -153,14 +144,11 @@ func TestServeLocalImage(t *testing.T) {
 	fakeContents := "dummy-image-contents"
 	file.Write([]byte(fakeContents))
 
-	req, err := http.NewRequest("GET", file.Name(), nil)
-	if err != nil {
-		t.Errorf("Error creating a new request: %v", err)
-	}
-
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(serveLocalImage)
-	handler.ServeHTTP(rr, req)
+	rr := testtools.MockRequest(t,
+		"GET",
+		file.Name(),
+		http.HandlerFunc(serveLocalImage),
+	)
 
 	if status := rr.Code; status == http.StatusNotFound {
 		t.Errorf("serveLocalImage returned 404.")
@@ -179,14 +167,11 @@ func TestServeLocalImage(t *testing.T) {
 }
 
 func TestServeLocalImageNoSuchFile404(t *testing.T) {
-	req, err := http.NewRequest("GET", "/no-such-file.png", nil)
-	if err != nil {
-		t.Errorf("Error creating a new request: %v", err)
-	}
-
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(serveLocalImage)
-	handler.ServeHTTP(rr, req)
+	rr := testtools.MockRequest(t,
+		"GET",
+		"/no-such-file.png",
+		http.HandlerFunc(serveLocalImage),
+	)
 
 	if status := rr.Code; status != http.StatusNotFound {
 		t.Errorf("serveLocalImage returned %s.", rr.Result().Status)
@@ -196,7 +181,12 @@ func TestServeLocalImageNoSuchFile404(t *testing.T) {
 
 func TestGetSvgImage(t *testing.T) {
 	file, _ := os.Open("../assets/android.svg")
-	rr := testtools.MockRequest(t, "GET", file.Name(), http.HandlerFunc(serveLocalImage))
+
+	rr := testtools.MockRequest(t,
+		"GET",
+		file.Name(),
+		http.HandlerFunc(serveLocalImage),
+	)
 
 	got := rr.Header().Get("Content-Type")
 	want := "image/svg+xml"
