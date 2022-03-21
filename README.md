@@ -14,7 +14,22 @@ commiting them.
 * Light/Dark toggle :sunny:/:new_moon:
 * Auto-close tabs when the server is closed
 
-## Download
+## Install
+
+### macOS/Linux
+
+Install the latest version for your system:
+
+```sh
+curl -sS https://storage.googleapis.com/spamd-releases/install.sh | sh
+```
+
+### Windows
+
+Download the release [package](https://github.com/Vui-Chee/spamd/releases/download/v0.1.1/spamd_windows_amd64)
+directly.
+
+### Using Go
 
 If you have already installed [go](https://go.dev/dl/), you can run `go get github.com/vui-chee/spamd` or
 `go install github.com/vui-chee/spamd@latest`.
