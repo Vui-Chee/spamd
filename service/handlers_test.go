@@ -193,3 +193,15 @@ func TestServeLocalImageNoSuchFile404(t *testing.T) {
 		t.FailNow()
 	}
 }
+
+func TestGetSvgImage(t *testing.T) {
+	file, _ := os.Open("../assets/android.svg")
+	rr := testtools.MockRequest(t, "GET", file.Name(), http.HandlerFunc(serveLocalImage))
+
+	got := rr.Header().Get("Content-Type")
+	want := "image/svg+xml"
+	if got != want {
+		t.Errorf("got %s; want %s\n", got, want)
+		t.FailNow()
+	}
+}
