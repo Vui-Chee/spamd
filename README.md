@@ -21,7 +21,7 @@ commiting them.
 Install the latest version for your system:
 
 ```sh
-curl -sS https://storage.googleapis.com/spamd-releases/install.sh | sh
+curl -sS https://raw.githubusercontent.com/Vui-Chee/spamd/master/install.sh | sh
 ```
 
 ### Windows
