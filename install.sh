@@ -32,7 +32,7 @@ download() {
   arch=$2
 	echo $BASE_URL/spamd_${platform}_${arch}
   curl --fail --location --output $BIN_DIR/spamd $BASE_URL/spamd_${platform}_${arch}
-	chmod +x $BIN_DIR/spamd
+  [[ $status = 0 ]] && chmod +x $BIN_DIR/spamd
 }
 
 do_install() {
@@ -42,5 +42,5 @@ do_install() {
 	download "${platform}" "${arch}"
 }
 
-BASE_URL=https://storage.googleapis.com/spamd-releases/install.sh
+BASE_URL=https://github.com/Vui-Chee/spamd/releases/latest/download
 do_install
