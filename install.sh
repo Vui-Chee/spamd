@@ -42,6 +42,5 @@ do_install() {
 	download "${platform}" "${arch}"
 }
 
-NAME=spamd
-BASE_URL=https://github.com/Vui-Chee/spamd/releases/latest/download
+BASE_URL=https://storage.googleapis.com/spamd-releases/install.sh
 do_install
