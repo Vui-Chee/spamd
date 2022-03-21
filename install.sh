@@ -32,7 +32,7 @@ download() {
   arch=$2
 	echo $BASE_URL/spamd_${platform}_${arch}
   curl --fail --location --output $BIN_DIR/spamd $BASE_URL/spamd_${platform}_${arch}
-  [[ $status = 0 ]] && chmod +x $BIN_DIR/spamd
+  chmod +x $BIN_DIR/spamd
 }
 
 do_install() {
