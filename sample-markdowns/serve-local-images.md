@@ -8,3 +8,6 @@
 
 ## GIF
 ![This is an image](/assets/simpson.gif)
+
+## SVG
+![This is an image](/assets/android.svg)
