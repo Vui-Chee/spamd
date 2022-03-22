@@ -38,11 +38,20 @@ If you have already installed [go](https://go.dev/dl/), you can run `go get gith
 
 Run :point_right: `spamd`. This by default opens `README.md` if it exists in the current working directory.
 
-Otherwise, if you want to open specific markdown file(s), you can do so by:
+Otherwise, do any of the following:
 
-`spamd [file1.md] [file2.md] ...`
+```sh
+# Example usage
+spamd * # open all markdowns in current directory
+spamd target-directory/* # open all markdowns in target directory
+spamd [file1.md] [file2.md] ... # open specific markdowns
+```
 
 For all other features, run `spamd --help`.
+
+#### Closing tabs
+
+Simply `ctrl-c` to shutdown the server and close all opened tabs.
 
 ## Development
 
