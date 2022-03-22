@@ -27,11 +27,25 @@ has_bindir() {
   fi
 }
 
+can_write() {
+  fake_file=$1/total_bs.txt
+  if touch "${fake_file}" 2>/dev/null; then
+    rm "${fake_file}"
+    return 0
+  fi
+  return 1
+}
+
 download() {
   platform=$1
   arch=$2
   curl --fail --location --output $BIN_DIR/spamd $BASE_URL/spamd_${platform}_${arch}
-  chmod +x $BIN_DIR/spamd
+
+  sudo=""
+  if ! can_write $BIN_DIR; then
+    sudo="sudo"
+  fi
+  ${sudo} chmod +x $BIN_DIR/spamd
 }
 
 do_install() {
