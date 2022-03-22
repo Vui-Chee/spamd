@@ -10,8 +10,8 @@ detect_platform() {
 }
 
 detect_arch() {
- 	arch="$(uname -m | tr '[:upper:]' '[:lower:]')"
-	case "${arch}" in
+  arch="$(uname -m | tr '[:upper:]' '[:lower:]')"
+  case "${arch}" in
     x86_64) arch="amd64" ;;
     armv*) arch="arm" ;;
     arm64) arch="aarch64" ;;
@@ -22,8 +22,8 @@ detect_arch() {
 has_bindir() {
   if [ ! -d "$BIN_DIR" ]; then
     echo "Installation location $BIN_DIR does not appear to be a directory"
-		echo "Make sure the location exists and is a directory, then try again."
-		exit 1
+    echo "Make sure the location exists and is a directory, then try again."
+    exit 1
   fi
 }
 
@@ -35,10 +35,10 @@ download() {
 }
 
 do_install() {
-	platform=$(detect_platform)
-	arch=$(detect_arch)
-	has_bindir
-	download "${platform}" "${arch}"
+  platform=$(detect_platform)
+  arch=$(detect_arch)
+  has_bindir
+  download "${platform}" "${arch}"
 }
 
 BIN_DIR=/usr/local/bin
