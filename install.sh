@@ -39,12 +39,13 @@ can_write() {
 download() {
   platform=$1
   arch=$2
-  curl --fail --location --output $BIN_DIR/spamd $BASE_URL/spamd_${platform}_${arch}
 
   sudo=""
   if ! can_write $BIN_DIR; then
     sudo="sudo"
   fi
+
+  ${sudo} curl --fail --location --output $BIN_DIR/spamd $BASE_URL/spamd_${platform}_${arch}
   ${sudo} chmod +x $BIN_DIR/spamd
 }
 
