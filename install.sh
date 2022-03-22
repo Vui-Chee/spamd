@@ -12,7 +12,7 @@ detect_platform() {
 detect_arch() {
  	arch="$(uname -m | tr '[:upper:]' '[:lower:]')"
 	case "${arch}" in
-    amd64) arch="x86_64" ;;
+    x86_64) arch="amd64" ;;
     armv*) arch="arm" ;;
     arm64) arch="aarch64" ;;
   esac
@@ -41,5 +41,6 @@ do_install() {
 	download "${platform}" "${arch}"
 }
 
+BIN_DIR=/usr/local/bin
 BASE_URL=https://github.com/Vui-Chee/spamd/releases/latest/download
 do_install
