@@ -1,11 +1,11 @@
 # spamd :fire: 
 
-<img alt="GitHub go.mod Go version" src="https://img.shields.io/github/go-mod/go-version/vui-chee/spamd"> <img alt="GitHub release (latest by date)" src="https://img.shields.io/github/downloads/vui-chee/spamd/latest/total">
+<img alt="GitHub go.mod Go version" src="https://img.shields.io/github/go-mod/go-version/vui-chee/spamd">
 
 spamd is a tool which allows you to **mass preview** Github flavoured markdowns before
 commiting them.
 
-![demo](/assets/demo.png)
+![demo](https://github.com/Vui-Chee/spamd/blob/master/assets/demo.png?raw=true)
 
 ## Features
 
