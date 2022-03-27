@@ -109,10 +109,46 @@
       });
     }
 
+    function treeSearch(listAfter, listBefore) {
+      if (listAfter === listBefore) {
+        return null;
+      }
+
+      for (let i = 0; i < Math.min(listAfter.length, listBefore.length); i++) {
+        if (!listAfter[i].isEqualNode(listBefore[i])) {
+          if (listAfter[i]) {
+            if (
+              listAfter[i].childNodes.length === 0 ||
+              (listAfter[i].childNodes.length === 1 &&
+                listAfter[i].children.length === 0)
+            ) {
+              return listAfter[i];
+            }
+          }
+
+          return treeSearch(listAfter[i].childNodes, listBefore[i].childNodes);
+        }
+      }
+    }
+
     function refreshContent(event) {
       let { data } = event;
       let contentDiv = document.querySelector(".markdown-body");
+
+      let oldChildNodes = [...contentDiv.childNodes];
       contentDiv.innerHTML = data;
+      let newChildNodes = contentDiv.childNodes;
+
+      // Perform scroll iff NodeList instances differ.
+      if (newChildNodes !== oldChildNodes) {
+        let node = treeSearch(newChildNodes, oldChildNodes);
+        if (node) {
+          window.scroll({
+            top: node.offsetTop ? node.offsetTop : node.parentElement.offsetTop,
+            behavior: "smooth",
+          });
+        }
+      }
 
       removeBulletPointsFromTaskListItem();
     }
