@@ -108,12 +108,18 @@
       });
     }
 
+    function setAttributeAllNodes(selector, name, val) {
+      const nodes = document.querySelectorAll(selector);
+      nodes.forEach((node) => node.setAttribute(name, val));
+    }
+
     function refreshContent(event) {
       let { data } = event;
       let contentDiv = document.querySelector(".markdown-body");
       contentDiv.innerHTML = data;
 
       removeBulletPointsFromTaskListItem();
+      setAttributeAllNodes("img", "referrerpolicy", "no-referrer");
     }
 
     function cleanup(event) {

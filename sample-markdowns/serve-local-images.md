@@ -1,5 +1,7 @@
 # Serve Local Images Example
 
+![Video demo](https://i.imgur.com/vDeGsmx.gif)
+
 ## PNG
 ![This is an image](/assets/pikachu.png)
 
