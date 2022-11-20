@@ -1165,3 +1165,9 @@ input:checked + .slider > .thumb {
 .slider.round:before {
   border-radius: 50%;
 }
+
+/* Copy code button. */
+.copy-code {
+  width: 32px;
+  height: 32px;
+}
