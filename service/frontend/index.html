@@ -95,8 +95,8 @@
       setupNewStream();
     }
 
-    // TODO: Check why is there additional tabs in front of copied code?
     // TODO: CSS animation features.
+    // Only shows when you hover over code block.
     function addCopyCodeButtons() {
       document.querySelectorAll("code").forEach(codeBlock => {
         // <pre> surrounding each code element.
@@ -105,6 +105,7 @@
           return;
         }
 
+        preWrapperElem.classList.add("code-block");
         preWrapperElem.style.cssText = "position: relative;";
 
         const newCopyButton = document.createElement("button");
@@ -115,11 +116,11 @@
   height="100%" fill="none" 
   viewBox="0 0 24 24" 
   stroke="currentColor" 
-  stroke-width="2" 
+  stroke-width="1.8" 
   stroke-linecap="round" 
   stroke-linejoin="round" 
   class="feather feather-copy w-4 h-4"
-  style="pointer-events: none;"
+  style="pointer-events: none;color: #24292f;"
 >
   <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
   <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1">
@@ -127,7 +128,6 @@
 </svg>`;
         newCopyButton.innerHTML = copySvg;
         newCopyButton.classList.add("copy-code");
-        newCopyButton.style.cssText = "position: absolute;top: 0.6rem;right: 0.5rem;";
         newCopyButton.addEventListener("click", function(e) {
           const parentElem = e.target.parentElement;
           if (parentElem) {

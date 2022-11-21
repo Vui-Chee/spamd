@@ -1170,4 +1170,27 @@ input:checked + .slider > .thumb {
 .copy-code {
   width: 32px;
   height: 32px;
+  position: absolute;
+  top: 0.6rem;
+  right: 0.5rem;
+  background-color: aliceblue;
+  cursor: pointer;
+  border: 1px solid rgba(27,31,36,0.15);
+  border-radius: 6px;
+
+  visibility: hidden;
+  opacity: 0;
+  transition: 80ms cubic-bezier(0.33, 1, 0.68, 1);
+  transition-property: visibility, opacity;
+}
+
+.copy-code:hover {
+  background-color: #f3f4f6;
+  border-color: rgba(27,31,36,0.15);
+  transition-duration: .1s;
+}
+
+.code-block:hover > .copy-code {
+  visibility: visible;
+  opacity: 1;
 }
