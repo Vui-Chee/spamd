@@ -53,6 +53,7 @@ html[data-theme="dark"] {
   --color-bg-color: #0d1117;
   --color-slider: slategrey;
   --color-slider-active: slategrey;
+  --color-thumbnail-arrow: #161b22;
 }
 
 :root,
@@ -105,6 +106,7 @@ html[data-theme="light"] {
   --color-bg-color: #ffffff;
   --color-slider: black;
   --color-slider-active: black;
+  --color-thumbnail-arrow: #f6f8fa;
 }
 
 .markdown-body {
@@ -1215,8 +1217,8 @@ input:checked + .slider > .thumb {
   top: 21px;
   width: 0;
   height: 0;
-  border-top: 5px solid #f6f8fa;
-  border-bottom: 5px solid #f6f8fa;
+  border-top: 5px solid var(--color-thumbnail-arrow);
+  border-bottom: 5px solid var(--color-thumbnail-arrow);
   border-left: 5px solid black;
 
   visibility: hidden;
