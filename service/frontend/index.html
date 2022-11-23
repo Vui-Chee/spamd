@@ -107,31 +107,47 @@
         preWrapperElem.style.cssText = "position: relative;";
 
         const newCopyButton = document.createElement("button");
-        const copySvg = `<svg 
-          aria-hidden="true" 
-          height="16" 
-          viewBox="0 0 16 16" 
-          version="1.1" 
-          width="16" 
-          data-view-component="true" 
-          class="octicon octicon-copy js-clipboard-copy-icon m-2"
-          style="pointer-events: none;color: #24292f;position: relative;left: 1px;display: block;"
-        >
-          <path 
-            fill-rule="evenodd" 
-            d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"
-          >
-          </path>
-        </svg>`;
-        const greenTick = `<svg 
-          class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"
-          style="display: none;position: relative;color: #2da44e;"
-        >
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-        </svg>`;
-        newCopyButton.innerHTML = copySvg;
-        newCopyButton.innerHTML += greenTick;
         newCopyButton.classList.add("copy-code");
+
+        const copySvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        const copySvgPath1 = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        const copySvgPath2 = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        copySvg.setAttribute("aria-hidden", "true");
+        copySvg.setAttribute("height", "16");
+        copySvg.setAttribute("width", "16");
+        copySvg.setAttribute("viewBox", "0 0 16 16");
+        copySvg.setAttribute("version", "1.1");
+        copySvg.setAttribute("data-view-components", "true");
+        copySvg.style["display"] = "block";
+        copySvg.style["position"] = "relative";
+        copySvg.style["left"] = "1px";
+        copySvg.style["pointer-events"] = "none";
+        copySvg.style["color"] = "#24292f";
+        copySvgPath1.setAttribute("fill-rule", "evenodd");
+        copySvgPath1.setAttribute("d", "M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z");
+        copySvg.appendChild(copySvgPath1);
+        copySvgPath2.setAttribute("fill-rule", "evenodd");
+        copySvgPath2.setAttribute("d", "M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z");
+        copySvg.appendChild(copySvgPath2);
+
+        const greenTick = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        greenTick.setAttribute("fill", "none");
+        greenTick.setAttribute("stroke", "currentColor");
+        greenTick.setAttribute("viewBox", "0 0 24 24");
+        greenTick.style["display"] = "none";
+        greenTick.style["position"] = "relative";
+        greenTick.style["color"] = "#2da44e";
+        const greenTickPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        greenTickPath.setAttribute("stroke-linecap", "round");
+        greenTickPath.setAttribute("stroke-linejoin", "round");
+        greenTickPath.setAttribute("stroke-width", "2");
+        greenTickPath.setAttribute("d", "M5 13l4 4L19 7");
+        greenTick.appendChild(greenTickPath);
+
+        // Add green tick first.
+        newCopyButton.prepend(greenTick);
+        newCopyButton.prepend(copySvg);
+
         newCopyButton.addEventListener("click", function(e) {
           const parentElem = e.target.parentElement;
           if (parentElem) {
