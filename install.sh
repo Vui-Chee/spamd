@@ -14,7 +14,7 @@ detect_arch() {
   case "${arch}" in
     x86_64) arch="amd64" ;;
     armv*) arch="arm" ;;
-    arm64) arch="aarch64" ;;
+    arm64) arch="arm64" ;;
   esac
   printf '%s' "${arch}"
 }
@@ -45,6 +45,7 @@ download() {
     sudo="sudo"
   fi
 
+  echo "$BIN_DIR/spamd $BASE_URL/spamd_${platform}_${arch}"
   ${sudo} curl --fail --location --output $BIN_DIR/spamd $BASE_URL/spamd_${platform}_${arch}
   ${sudo} chmod +x $BIN_DIR/spamd
 }
