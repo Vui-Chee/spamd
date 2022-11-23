@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	version = "0.1.1"
+	version = "0.1.4"
 )
 
 func main() {
@@ -18,6 +18,7 @@ func main() {
 }
 
 func closeOnCtrlC() {
+
 	var interrupt = make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
 

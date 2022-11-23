@@ -1,3 +1,14 @@
+## 0.1.4
+
+### New Features
+
+* Copy code button for each code block
+
+### Fixes
+
+* Display SVG images
+* Fix issue where HTTPS source images are not being displayed 
+
 ## 0.1.1
 
 ### New Features
