@@ -96,7 +96,7 @@
     }
 
     function addCopyCodeButtons() {
-      document.querySelectorAll("code").forEach(codeBlock => {
+      document.querySelectorAll("code").forEach((codeBlock) => {
         // <pre> surrounding each code element.
         const preWrapperElem = codeBlock.parentElement;
         if (preWrapperElem.tagName !== "PRE") {
@@ -158,29 +158,73 @@
           // Hide double squares, and make tick visible.
           newCopyButton.children[0].style["display"] = "none";
           newCopyButton.children[1].style["display"] = "block";
-
-          // Thumbnail.
-          const thumbnail = document.createElement("div");
-          thumbnail.innerHTML = "Copied!";
-          thumbnail.classList.add("code-thumbnail");
-          preWrapperElem.prepend(thumbnail);
-          // Right arrow.
-          const thumbnailArrow = document.createElement("div");
-          thumbnailArrow.classList.add("code-thumbnail-arrow");
-          preWrapperElem.prepend(thumbnailArrow);
-
-          // Return back to normal button after short period.
-          setTimeout(() => {
-            newCopyButton.style["border"] = "1px solid rgba(27,31,36,0.15)";
-            newCopyButton.children[0].style["display"] = "block";
-            newCopyButton.children[1].style["display"] = "none";
-            preWrapperElem.removeChild(thumbnail);
-            preWrapperElem.removeChild(thumbnailArrow);
-          }, 1000);
+          // Display thumbnail beside button.
+          createThumbnail(preWrapperElem, -preWrapperElem.scrollLeft + 45);
         });
 
         preWrapperElem.prepend(newCopyButton);
+        // Remove copy button during scrolling, but restore later.
+        let timer = null;
+        preWrapperElem.addEventListener("scroll", function(e) {
+          try {
+            if (preWrapperElem.children.length >= 3) {
+              preWrapperElem.removeChild(preWrapperElem.children[0]);
+              preWrapperElem.removeChild(preWrapperElem.children[0]);
+              preWrapperElem.removeChild(preWrapperElem.children[0]);
+            } else {
+              preWrapperElem.removeChild(newCopyButton);
+            }
+            // Remove thumbnail if any.
+            if(timer !== null) {
+              clearTimeout(timer);
+            }
+            timer = setTimeout(function() {
+              // Put the button at newly calculated position.
+              if (e.target.children.length > 0) {
+                newCopyButton.style["right"] = `${-e.target.scrollLeft + 8}px`;
+              }
+              preWrapperElem.prepend(newCopyButton);
+            }, 150);
+          } catch(err) {
+            // Ignore from trying to remove non-existent element.
+          }
+        });
       });
+    }
+
+    // @rightPos: position of thumbnail from the right of parent.
+    function createThumbnail(parentElem, rightPos) {
+      const newCopyButton = parentElem.children[0];
+
+      // Thumbnail.
+      const thumbnail = document.createElement("div");
+      thumbnail.innerHTML = "Copied!";
+      thumbnail.classList.add("code-thumbnail");
+      if (rightPos) {
+        thumbnail.style["right"] = `${rightPos}px`;
+      }
+      parentElem.prepend(thumbnail);
+      // Right arrow.
+      const thumbnailArrow = document.createElement("div");
+      thumbnailArrow.classList.add("code-thumbnail-arrow");
+      if (rightPos) {
+        thumbnailArrow.style["right"] = `${rightPos-5}px`;
+      }
+      parentElem.prepend(thumbnailArrow);
+
+      if (newCopyButton) {
+        // Return back to normal button after short period.
+        setTimeout(() => {
+          newCopyButton.style["border"] = "1px solid rgba(27,31,36,0.15)";
+          newCopyButton.children[0].style["display"] = "block";
+          newCopyButton.children[1].style["display"] = "none";
+          try {
+            // Thumbnail could be removed during scroll event.
+            parentElem.removeChild(thumbnail);
+            parentElem.removeChild(thumbnailArrow);
+          } catch(err) {}
+        }, 500);
+      }
     }
 
     function removeBulletPointsFromTaskListItem() {
