@@ -143,11 +143,23 @@
           newCopyButton.children[0].style["display"] = "none";
           newCopyButton.children[1].style["display"] = "block";
 
+          // Thumbnail.
+          const thumbnail = document.createElement("div");
+          thumbnail.innerHTML = "Copied!";
+          thumbnail.classList.add("code-thumbnail");
+          preWrapperElem.prepend(thumbnail);
+          // Right arrow.
+          const thumbnailArrow = document.createElement("div");
+          thumbnailArrow.classList.add("code-thumbnail-arrow");
+          preWrapperElem.prepend(thumbnailArrow);
+
           // Return back to normal button after short period.
           setTimeout(() => {
             newCopyButton.style["border"] = "1px solid rgba(27,31,36,0.15)";
             newCopyButton.children[0].style["display"] = "block";
             newCopyButton.children[1].style["display"] = "none";
+            preWrapperElem.removeChild(thumbnail);
+            preWrapperElem.removeChild(thumbnailArrow);
           }, 1000);
         });
 

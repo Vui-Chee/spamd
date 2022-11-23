@@ -1190,7 +1190,34 @@ input:checked + .slider > .thumb {
   transition-duration: .1s;
 }
 
-.code-block:hover > .copy-code {
+.code-block:hover > :is(.copy-code, .code-thumbnail, .code-thumbnail-arrow) {
   visibility: visible;
   opacity: 1;
+}
+
+.code-thumbnail {
+  position: absolute;
+  right: 45px;
+  font-size: 11px;
+  color: white;
+  background-color: black;
+  padding: 5px 7px 5px 8px;
+  top: 13px;
+  border-radius: 6px;
+
+  visibility: hidden;
+}
+
+.code-thumbnail-arrow {
+  position: absolute;
+  background: black;
+  right: 40px;
+  top: 21px;
+  width: 0;
+  height: 0;
+  border-top: 5px solid #f6f8fa;
+  border-bottom: 5px solid #f6f8fa;
+  border-left: 5px solid black;
+
+  visibility: hidden;
 }
