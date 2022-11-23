@@ -53,6 +53,7 @@ html[data-theme="dark"] {
   --color-bg-color: #0d1117;
   --color-slider: slategrey;
   --color-slider-active: slategrey;
+  --color-thumbnail-arrow: #161b22;
 }
 
 :root,
@@ -105,6 +106,7 @@ html[data-theme="light"] {
   --color-bg-color: #ffffff;
   --color-slider: black;
   --color-slider-active: black;
+  --color-thumbnail-arrow: #f6f8fa;
 }
 
 .markdown-body {
@@ -1164,4 +1166,60 @@ input:checked + .slider > .thumb {
 
 .slider.round:before {
   border-radius: 50%;
+}
+
+/* Copy code button. */
+.copy-code {
+  width: 32px;
+  height: 32px;
+  position: absolute;
+  top: 0.6rem;
+  right: 0.5rem;
+  background-color: aliceblue;
+  cursor: pointer;
+  border: 1px solid rgba(27,31,36,0.15);
+  border-radius: 6px;
+
+  visibility: hidden;
+  opacity: 0;
+  transition: 80ms cubic-bezier(0.33, 1, 0.68, 1);
+  transition-property: visibility, opacity;
+}
+
+.copy-code:hover {
+  background-color: #f3f4f6;
+  border-color: rgba(27,31,36,0.15);
+  transition-duration: .1s;
+}
+
+.code-block:hover > :is(.copy-code, .code-thumbnail, .code-thumbnail-arrow) {
+  visibility: visible;
+  opacity: 1;
+}
+
+.code-thumbnail {
+  position: absolute;
+  right: 45px;
+  font-size: 11px;
+  color: white;
+  background-color: black;
+  padding: 5px 7px 5px 8px;
+  top: 13px;
+  border-radius: 6px;
+
+  visibility: hidden;
+}
+
+.code-thumbnail-arrow {
+  position: absolute;
+  background: black;
+  right: 40px;
+  top: 21px;
+  width: 0;
+  height: 0;
+  border-top: 5px solid var(--color-thumbnail-arrow);
+  border-bottom: 5px solid var(--color-thumbnail-arrow);
+  border-left: 5px solid black;
+
+  visibility: hidden;
 }

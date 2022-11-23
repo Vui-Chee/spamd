@@ -95,6 +95,94 @@
       setupNewStream();
     }
 
+    function addCopyCodeButtons() {
+      document.querySelectorAll("code").forEach(codeBlock => {
+        // <pre> surrounding each code element.
+        const preWrapperElem = codeBlock.parentElement;
+        if (preWrapperElem.tagName !== "PRE") {
+          return;
+        }
+
+        preWrapperElem.classList.add("code-block");
+        preWrapperElem.style.cssText = "position: relative;";
+
+        const newCopyButton = document.createElement("button");
+        newCopyButton.classList.add("copy-code");
+
+        const copySvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        const copySvgPath1 = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        const copySvgPath2 = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        copySvg.setAttribute("aria-hidden", "true");
+        copySvg.setAttribute("height", "16");
+        copySvg.setAttribute("width", "16");
+        copySvg.setAttribute("viewBox", "0 0 16 16");
+        copySvg.setAttribute("version", "1.1");
+        copySvg.setAttribute("data-view-components", "true");
+        copySvg.style["display"] = "block";
+        copySvg.style["position"] = "relative";
+        copySvg.style["left"] = "1px";
+        copySvg.style["pointer-events"] = "none";
+        copySvg.style["color"] = "#24292f";
+        copySvgPath1.setAttribute("fill-rule", "evenodd");
+        copySvgPath1.setAttribute("d", "M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z");
+        copySvg.appendChild(copySvgPath1);
+        copySvgPath2.setAttribute("fill-rule", "evenodd");
+        copySvgPath2.setAttribute("d", "M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z");
+        copySvg.appendChild(copySvgPath2);
+
+        const greenTick = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        greenTick.setAttribute("fill", "none");
+        greenTick.setAttribute("stroke", "currentColor");
+        greenTick.setAttribute("viewBox", "0 0 24 24");
+        greenTick.style["display"] = "none";
+        greenTick.style["position"] = "relative";
+        greenTick.style["color"] = "#2da44e";
+        const greenTickPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        greenTickPath.setAttribute("stroke-linecap", "round");
+        greenTickPath.setAttribute("stroke-linejoin", "round");
+        greenTickPath.setAttribute("stroke-width", "2");
+        greenTickPath.setAttribute("d", "M5 13l4 4L19 7");
+        greenTick.appendChild(greenTickPath);
+
+        // Add green tick first.
+        newCopyButton.prepend(greenTick);
+        newCopyButton.prepend(copySvg);
+
+        newCopyButton.addEventListener("click", function(e) {
+          const parentElem = e.target.parentElement;
+          if (parentElem) {
+            navigator.clipboard.writeText(parentElem.textContent.trim());
+          }
+          // Display green tick box.
+          newCopyButton.style["border"] = "1px solid #2da44e";
+          // Hide double squares, and make tick visible.
+          newCopyButton.children[0].style["display"] = "none";
+          newCopyButton.children[1].style["display"] = "block";
+
+          // Thumbnail.
+          const thumbnail = document.createElement("div");
+          thumbnail.innerHTML = "Copied!";
+          thumbnail.classList.add("code-thumbnail");
+          preWrapperElem.prepend(thumbnail);
+          // Right arrow.
+          const thumbnailArrow = document.createElement("div");
+          thumbnailArrow.classList.add("code-thumbnail-arrow");
+          preWrapperElem.prepend(thumbnailArrow);
+
+          // Return back to normal button after short period.
+          setTimeout(() => {
+            newCopyButton.style["border"] = "1px solid rgba(27,31,36,0.15)";
+            newCopyButton.children[0].style["display"] = "block";
+            newCopyButton.children[1].style["display"] = "none";
+            preWrapperElem.removeChild(thumbnail);
+            preWrapperElem.removeChild(thumbnailArrow);
+          }, 1000);
+        });
+
+        preWrapperElem.prepend(newCopyButton);
+      });
+    }
+
     function removeBulletPointsFromTaskListItem() {
       // Remove bullet points from task list items.
       // Each task item will have a checkbox type attribute.
@@ -118,6 +206,7 @@
       let contentDiv = document.querySelector(".markdown-body");
       contentDiv.innerHTML = data;
 
+      addCopyCodeButtons();
       removeBulletPointsFromTaskListItem();
       setAttributeAllNodes("img", "referrerpolicy", "no-referrer");
     }
