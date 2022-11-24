@@ -151,7 +151,7 @@
         newCopyButton.addEventListener("click", function(e) {
           const parentElem = e.target.parentElement;
           if (parentElem) {
-            navigator.clipboard.writeText(parentElem.textContent.trim());
+            navigator.clipboard.writeText(parentElem.textContent);
           }
           // Display green tick box.
           newCopyButton.style["border"] = "1px solid #2da44e";
