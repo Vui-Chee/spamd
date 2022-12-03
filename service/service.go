@@ -17,11 +17,11 @@ import (
 )
 
 const (
-	TOOL_NAME = "spamd"
+	tool_name = "spamd"
 
 	// Remaining unmatched routes go to default html handler.
 	// For other static routes, see config package.
-	AllElse = "^/.+"
+	allElse = "^/.+"
 
 	// Everything is served locally.
 	protocol = "http://"
@@ -32,18 +32,18 @@ const (
 var (
 	serviceConfig *config.ServiceConfig
 
-	watcher *FileWatcher
+	watcher *fileWatcher
 )
 
 func init() {
 	var err error
-	serviceConfig, err = config.ReadConfigFromFile("." + TOOL_NAME)
+	serviceConfig, err = config.ReadConfigFromFile("." + tool_name)
 	if err != nil {
 		sys.ErrorAndExit(err.Error())
 	}
 }
 
-func OverrideConfig(theme string, codeBlockStyle string) {
+func overrideConfig(theme string, codeBlockStyle string) {
 	serviceConfig.SetTheme(theme)
 	err := serviceConfig.SetCodeBlockTheme(codeBlockStyle)
 	if err != nil {
@@ -51,7 +51,7 @@ func OverrideConfig(theme string, codeBlockStyle string) {
 	}
 }
 
-func Listen(port int) (net.Listener, error) {
+func listen(port int) (net.Listener, error) {
 	var err error
 
 	if port == 0 {
@@ -66,20 +66,20 @@ func Listen(port int) (net.Listener, error) {
 	return l, nil
 }
 
-func Start(l net.Listener) {
-	watcher = NewFileWatcher(false)
+func start(l net.Listener) {
+	watcher = newFileWatcher(false)
 	mux := middleware.RegexpHandler{
 		AdditionalCheck: redirectIfNotMarkdown,
 	}
 	mux.HandleFunc(config.StylesPrefix, serveCSS)
 	mux.HandleFunc(config.ImageRegex, serveLocalImage)
 	mux.HandleFunc(config.RefreshPattern(), watcher.RefreshContent)
-	mux.HandleFunc(AllElse, serveHTML)
+	mux.HandleFunc(allElse, serveHTML)
 	wrapper := middleware.NewLogger(&mux)
 
 	// Must call this before main thread is blocked
 	// http.Serve.
-	watcher.harness.loops = ENDLESS_LOOP
+	watcher.harness.loops = endless_loop
 	watcher.Watch()
 
 	log.Fatal(http.Serve(l, wrapper))
@@ -98,7 +98,7 @@ func redirectIfNotMarkdown(path string) bool {
 
 	var uri string
 	refreshRegex, _ := regexp.Compile(config.RefreshPattern())
-	htmlRegex, _ := regexp.Compile(AllElse)
+	htmlRegex, _ := regexp.Compile(allElse)
 	if refreshRegex.MatchString(path) {
 		uri = path[len(config.RefreshPrefix):]
 	} else if htmlRegex.MatchString(path) {
@@ -128,9 +128,9 @@ func Run(opts *options.Options, version string) {
 		os.Exit(0)
 	}
 
-	OverrideConfig(opts.Theme, opts.CodeStyle)
+	overrideConfig(opts.Theme, opts.CodeStyle)
 
-	l, err := Listen(opts.Port)
+	l, err := listen(opts.Port)
 	if err != nil {
 		sys.ErrorAndExit(err.Error())
 	}
@@ -139,5 +139,5 @@ func Run(opts *options.Options, version string) {
 	browser.MassOpen(baseUrl, opts.NoBrowser)
 
 	printAdditionalInfo(baseUrl)
-	Start(l)
+	start(l)
 }

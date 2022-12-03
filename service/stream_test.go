@@ -21,7 +21,7 @@ func TestConstructFileWatcher(t *testing.T) {
 	var want string
 	var got string
 
-	watcher := NewFileWatcher(false)
+	watcher := newFileWatcher(false)
 	if watcher == nil {
 		t.Error("got <nil>; want &FileWatcher{}")
 	}
@@ -40,7 +40,7 @@ func TestConstructFileWatcher(t *testing.T) {
 }
 
 func TestAddNewConnection(t *testing.T) {
-	watcher := NewFileWatcher(true)
+	watcher := newFileWatcher(true)
 	// Create mock ws connection.
 	c := &websocket.Conn{}
 
@@ -87,7 +87,7 @@ func (c *MockWebsocketConn) WriteMessage(messageType int, data []byte) error {
 }
 
 func TestDeleteConnection(t *testing.T) {
-	watcher := NewFileWatcher(true)
+	watcher := newFileWatcher(true)
 	file := "test.md"
 
 	targetConn := &conn{
@@ -128,7 +128,7 @@ func TestMultipleAddConn(t *testing.T) {
 	}
 	var wg sync.WaitGroup
 
-	watcher := NewFileWatcher(true)
+	watcher := newFileWatcher(true)
 	for i := 0; i < len(files); i++ {
 		file := files[i]
 		wg.Add(1)
@@ -168,7 +168,7 @@ func TestCloseConnection(t *testing.T) {
 	file, _ := ioutil.TempFile(".", "*")
 	defer os.Remove(file.Name())
 
-	watcher := NewFileWatcher(true)
+	watcher := newFileWatcher(true)
 	resourceUri := config.RefreshPrefix + file.Name()[1:]
 
 	s, _, err := createMockWsConn(resourceUri, watcher.RefreshContent)
@@ -207,7 +207,7 @@ actual HTML.
 `)
 	defer os.Remove(file.Name())
 
-	watcher := NewFileWatcher(true)
+	watcher := newFileWatcher(true)
 	watcher.harness.loops = 0 // Don't run main loop
 	resourceUri := config.RefreshPrefix + file.Name()[1:]
 
@@ -239,7 +239,7 @@ func TestTriggerWriteOnWatch(t *testing.T) {
 	info, _ := file.Stat()
 	filepath := file.Name()[2:]
 
-	watcher := NewFileWatcher(true)
+	watcher := newFileWatcher(true)
 	// Setup fake conn struct.
 	watcher.files[filepath] = &connCluster{
 		Lastmodifed: info.ModTime(),
@@ -276,7 +276,7 @@ func TestTriggerErrorOnWatch(t *testing.T) {
 	info, _ := file.Stat()
 	filepath := file.Name()[2:]
 
-	watcher := NewFileWatcher(true)
+	watcher := newFileWatcher(true)
 	// Setup fake conn struct.
 	watcher.files[filepath] = &connCluster{
 		Lastmodifed: info.ModTime(),

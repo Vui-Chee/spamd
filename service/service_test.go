@@ -26,7 +26,7 @@ func TestListenReturnsErrOnInvalidPort(t *testing.T) {
 	}
 
 	for _, port := range invalidPorts {
-		_, err := Listen(port)
+		_, err := listen(port)
 		if err == nil {
 			t.Errorf("Should return error if port == %d, Got: error == nil.\n", port)
 		}
@@ -45,7 +45,7 @@ func TestListenOnConfigPortOnZeroPort(t *testing.T) {
 	wantPort := 5817
 	serviceConfig.Port = wantPort
 
-	l, _ := Listen(0)
+	l, _ := listen(0)
 	gotPort, _ := strconv.Atoi(strings.SplitAfter(l.Addr().String(), ":")[1])
 	if gotPort != wantPort {
 		t.Errorf("service.Listen(0): want %d, got: %d\n", wantPort, gotPort)
@@ -99,7 +99,7 @@ func TestOverrideTheme(t *testing.T) {
 	wantTheme := "dark"
 	wantCodestyle := "xcode"
 
-	OverrideConfig(wantTheme, wantCodestyle)
+	overrideConfig(wantTheme, wantCodestyle)
 	if serviceConfig.Theme != wantTheme {
 		t.Errorf("OverrideConfig() : want %s, got %s\n", wantTheme, serviceConfig.Theme)
 	}

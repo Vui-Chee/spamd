@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	ENDLESS_LOOP = -1
+	endless_loop = -1
 
 	// Messages for each connection.
 	write_success = "success"
@@ -34,7 +34,7 @@ type testHarness struct {
 	useWaitGroup bool
 }
 
-func NewTestHarness() testHarness {
+func newTestHarness() testHarness {
 	return testHarness{
 		loops:        1,
 		wg:           new(sync.WaitGroup),
@@ -48,7 +48,7 @@ func NewTestHarness() testHarness {
 //
 // This allows the connection to be mocked during
 // testing.
-type WebsocketConn interface {
+type websocketConn interface {
 	Close() error
 	ReadMessage() (messageType int, p []byte, err error)
 	WriteMessage(messageType int, data []byte) error
@@ -62,7 +62,7 @@ type conn struct {
 	Ch chan string
 
 	// gorilla/websocket
-	Conn WebsocketConn
+	Conn websocketConn
 }
 
 func (c *conn) Trigger(event string) error {
@@ -75,7 +75,7 @@ func (c *conn) Trigger(event string) error {
 	return fmt.Errorf("No such connection event.")
 }
 
-func NewConn(c WebsocketConn) *conn {
+func newConn(c websocketConn) *conn {
 	return &conn{
 		Ch:   make(chan string),
 		Conn: c,
@@ -116,18 +116,7 @@ type connCluster struct {
 	conns       []*conn
 }
 
-func NewCluster(filepath string) *connCluster {
-	modtime, err := sys.Modtime(filepath)
-	if err != nil {
-		return nil
-	}
-
-	return &connCluster{
-		Lastmodifed: modtime,
-	}
-}
-
-type FileWatcher struct {
+type fileWatcher struct {
 	// Represents a set of connections per filepath (key).
 	files map[string]*connCluster
 
@@ -143,11 +132,11 @@ type FileWatcher struct {
 	harness testHarness
 }
 
-func (f *FileWatcher) AddConn(filepath string, modtime time.Time, c WebsocketConn) *conn {
+func (f *fileWatcher) AddConn(filepath string, modtime time.Time, c websocketConn) *conn {
 	f.lock.Lock()
 	defer f.lock.Unlock()
 
-	newConn := NewConn(c)
+	newConn := newConn(c)
 	cluster, ok := f.files[filepath]
 	if !ok {
 		f.files[filepath] = &connCluster{
@@ -163,7 +152,7 @@ func (f *FileWatcher) AddConn(filepath string, modtime time.Time, c WebsocketCon
 	return newConn
 }
 
-func (f *FileWatcher) DeleteConn(filepath string, targetConn *conn) error {
+func (f *fileWatcher) DeleteConn(filepath string, targetConn *conn) error {
 	f.lock.Lock()
 	defer f.lock.Unlock()
 
@@ -200,7 +189,7 @@ func (f *FileWatcher) DeleteConn(filepath string, targetConn *conn) error {
 	return nil
 }
 
-func (f *FileWatcher) CloseClusterConn(filepath string) {
+func (f *fileWatcher) CloseClusterConn(filepath string) {
 	cluster, ok := f.files[filepath]
 	if ok {
 		for _, c := range cluster.conns {
@@ -211,7 +200,7 @@ func (f *FileWatcher) CloseClusterConn(filepath string) {
 	delete(f.files, filepath)
 }
 
-func (f *FileWatcher) CloseAllConn() {
+func (f *fileWatcher) CloseAllConn() {
 	f.lock.Lock()
 	defer f.lock.Unlock()
 
@@ -221,7 +210,7 @@ func (f *FileWatcher) CloseAllConn() {
 	}
 }
 
-func (f *FileWatcher) RefreshContent(w http.ResponseWriter, r *http.Request) {
+func (f *fileWatcher) RefreshContent(w http.ResponseWriter, r *http.Request) {
 	// Get the path relative to the directory where the tool is run.
 	// '+1' to skip the leading '/'.
 	uri := r.URL.Path
@@ -291,7 +280,7 @@ func (f *FileWatcher) RefreshContent(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (f *FileWatcher) Watch() {
+func (f *fileWatcher) Watch() {
 	go func() {
 		// Only relevant during testing.
 		if f.harness.useWaitGroup {
@@ -336,15 +325,15 @@ func (f *FileWatcher) Watch() {
 	}()
 }
 
-func NewFileWatcher(useHarness bool) *FileWatcher {
-	watcher := &FileWatcher{
+func newFileWatcher(useHarness bool) *fileWatcher {
+	watcher := &fileWatcher{
 		files:    make(map[string]*connCluster),
 		lock:     sync.Mutex{},
 		watchInv: time.Duration(300 * time.Millisecond),
 	}
 
 	if useHarness {
-		watcher.harness = NewTestHarness()
+		watcher.harness = newTestHarness()
 	}
 
 	return watcher
