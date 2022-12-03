@@ -3,7 +3,7 @@ package options
 import (
 	"flag"
 
-	"github.com/vui-chee/spamd/internal/sys"
+	"spamd/internal/sys"
 )
 
 const (

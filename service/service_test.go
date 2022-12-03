@@ -9,7 +9,7 @@ import (
 	"sync"
 	"testing"
 
-	conf "github.com/vui-chee/spamd/service/config"
+	"spamd/service/config"
 )
 
 var (
@@ -55,9 +55,9 @@ func TestListenOnConfigPortOnZeroPort(t *testing.T) {
 func TestValidRedirects(t *testing.T) {
 	var got bool
 
-	got = redirectIfNotMarkdown(conf.StylesPrefix)
+	got = redirectIfNotMarkdown(config.StylesPrefix)
 	if got != true {
-		t.Errorf("redirectIfNotMarkdown(\"%s\") should return true.", conf.StylesPrefix)
+		t.Errorf("redirectIfNotMarkdown(\"%s\") should return true.", config.StylesPrefix)
 	}
 
 	file, _ := ioutil.TempFile(".", "*.md")
@@ -70,7 +70,7 @@ func TestValidRedirects(t *testing.T) {
 	}
 
 	// Test serving resource from refresh route.
-	uri = conf.RefreshPrefix + "/" + path.Base(file.Name())
+	uri = config.RefreshPrefix + "/" + path.Base(file.Name())
 	got = redirectIfNotMarkdown(uri)
 	if got != true {
 		t.Errorf("redirectIfNotMarkdown(\"%s\") should return true.", uri)

@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"regexp"
 
-	"github.com/vui-chee/spamd/internal/sys"
+	"spamd/internal/sys"
 )
 
 type route struct {

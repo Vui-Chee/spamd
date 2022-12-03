@@ -8,7 +8,7 @@ import (
 	"sync"
 	"testing"
 
-	testtools "github.com/vui-chee/spamd/internal/testing"
+	testtools "spamd/internal/testing"
 )
 
 var (

@@ -4,8 +4,8 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/vui-chee/spamd/internal/options"
-	"github.com/vui-chee/spamd/service"
+	"spamd/internal/options"
+	"spamd/service"
 )
 
 const (

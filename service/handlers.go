@@ -9,7 +9,7 @@ import (
 	"os"
 	"path"
 
-	conf "github.com/vui-chee/spamd/service/config"
+	"spamd/service/config"
 )
 
 var (
@@ -82,7 +82,7 @@ func serveHTML(w http.ResponseWriter, r *http.Request) {
 	t.Execute(w, map[string]string{"Filename": path.Base(r.URL.Path),
 		"URI":           r.URL.Path,
 		"Theme":         serviceConfig.Theme,
-		"RefreshPrefix": conf.RefreshPrefix,
-		"StylesPrefix":  conf.StylesPrefix,
+		"RefreshPrefix": config.RefreshPrefix,
+		"StylesPrefix":  config.StylesPrefix,
 	})
 }

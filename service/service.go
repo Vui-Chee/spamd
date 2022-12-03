@@ -9,11 +9,11 @@ import (
 	"os"
 	"regexp"
 
-	"github.com/vui-chee/spamd/internal/browser"
-	"github.com/vui-chee/spamd/internal/options"
-	"github.com/vui-chee/spamd/internal/sys"
-	conf "github.com/vui-chee/spamd/service/config"
-	m "github.com/vui-chee/spamd/service/middleware"
+	"spamd/internal/browser"
+	"spamd/internal/options"
+	"spamd/internal/sys"
+	"spamd/service/config"
+	"spamd/service/middleware"
 )
 
 const (
@@ -30,14 +30,14 @@ const (
 // Set the configs for this service as a global,
 // but only accessible within the service package.
 var (
-	serviceConfig *conf.ServiceConfig
+	serviceConfig *config.ServiceConfig
 
 	watcher *FileWatcher
 )
 
 func init() {
 	var err error
-	serviceConfig, err = conf.ReadConfigFromFile("." + TOOL_NAME)
+	serviceConfig, err = config.ReadConfigFromFile("." + TOOL_NAME)
 	if err != nil {
 		sys.ErrorAndExit(err.Error())
 	}
@@ -68,14 +68,14 @@ func Listen(port int) (net.Listener, error) {
 
 func Start(l net.Listener) {
 	watcher = NewFileWatcher(false)
-	mux := m.RegexpHandler{
+	mux := middleware.RegexpHandler{
 		AdditionalCheck: redirectIfNotMarkdown,
 	}
-	mux.HandleFunc(conf.StylesPrefix, serveCSS)
-	mux.HandleFunc(conf.ImageRegex, serveLocalImage)
-	mux.HandleFunc(conf.RefreshPattern(), watcher.RefreshContent)
+	mux.HandleFunc(config.StylesPrefix, serveCSS)
+	mux.HandleFunc(config.ImageRegex, serveLocalImage)
+	mux.HandleFunc(config.RefreshPattern(), watcher.RefreshContent)
 	mux.HandleFunc(AllElse, serveHTML)
-	wrapper := m.NewLogger(&mux)
+	wrapper := middleware.NewLogger(&mux)
 
 	// Must call this before main thread is blocked
 	// http.Serve.
@@ -92,20 +92,20 @@ func Shutdown() {
 }
 
 func redirectIfNotMarkdown(path string) bool {
-	if path == conf.StylesPrefix {
+	if path == config.StylesPrefix {
 		return true
 	}
 
 	var uri string
-	refreshRegex, _ := regexp.Compile(conf.RefreshPattern())
+	refreshRegex, _ := regexp.Compile(config.RefreshPattern())
 	htmlRegex, _ := regexp.Compile(AllElse)
 	if refreshRegex.MatchString(path) {
-		uri = path[len(conf.RefreshPrefix):]
+		uri = path[len(config.RefreshPrefix):]
 	} else if htmlRegex.MatchString(path) {
 		uri = path
 	}
 
-	imageRegex, _ := regexp.Compile(conf.ImageRegex)
+	imageRegex, _ := regexp.Compile(config.ImageRegex)
 	cwd, _ := os.Getwd()
 	// Skip non-markdown and non-image files.
 	if !sys.IsFileWithExt(cwd+uri, ".md") && !imageRegex.Match([]byte(uri)) {

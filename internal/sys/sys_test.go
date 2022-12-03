@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"testing"
 
-	testtools "github.com/vui-chee/spamd/internal/testing"
+	testtools "spamd/internal/testing"
 )
 
 type TestDelegate struct {

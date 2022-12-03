@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/vui-chee/spamd/internal/sys"
-	conf "github.com/vui-chee/spamd/service/config"
+	"spamd/internal/sys"
+	"spamd/service/config"
 
 	"github.com/gorilla/websocket"
 )
@@ -225,7 +225,7 @@ func (f *FileWatcher) RefreshContent(w http.ResponseWriter, r *http.Request) {
 	// Get the path relative to the directory where the tool is run.
 	// '+1' to skip the leading '/'.
 	uri := r.URL.Path
-	filepath, err := filepath.EvalSymlinks(uri[len(conf.RefreshPrefix)+1:])
+	filepath, err := filepath.EvalSymlinks(uri[len(config.RefreshPrefix)+1:])
 	if err != nil {
 		return
 	}

@@ -13,8 +13,8 @@ import (
 
 	"github.com/gorilla/websocket"
 
-	testutils "github.com/vui-chee/spamd/internal/testing"
-	conf "github.com/vui-chee/spamd/service/config"
+	testutils "spamd/internal/testing"
+	"spamd/service/config"
 )
 
 func TestConstructFileWatcher(t *testing.T) {
@@ -169,7 +169,7 @@ func TestCloseConnection(t *testing.T) {
 	defer os.Remove(file.Name())
 
 	watcher := NewFileWatcher(true)
-	resourceUri := conf.RefreshPrefix + file.Name()[1:]
+	resourceUri := config.RefreshPrefix + file.Name()[1:]
 
 	s, _, err := createMockWsConn(resourceUri, watcher.RefreshContent)
 	defer s.Close()
@@ -209,7 +209,7 @@ actual HTML.
 
 	watcher := NewFileWatcher(true)
 	watcher.harness.loops = 0 // Don't run main loop
-	resourceUri := conf.RefreshPrefix + file.Name()[1:]
+	resourceUri := config.RefreshPrefix + file.Name()[1:]
 
 	s, ws, err := createMockWsConn(resourceUri, watcher.RefreshContent)
 	defer s.Close()

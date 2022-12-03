@@ -4,7 +4,7 @@ import (
 	"flag"
 	"os/exec"
 
-	"github.com/vui-chee/spamd/internal/sys"
+	"spamd/internal/sys"
 )
 
 const (
