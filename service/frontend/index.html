@@ -148,7 +148,12 @@
         newCopyButton.prepend(greenTick);
         newCopyButton.prepend(copySvg);
 
+        globalThis.clicked = false;
         newCopyButton.addEventListener("click", function(e) {
+          if (globalThis.clicked === true) {
+            return;
+          }
+          globalThis.clicked = true;
           const parentElem = e.target.parentElement;
           if (parentElem) {
             navigator.clipboard.writeText(parentElem.textContent);
@@ -222,6 +227,7 @@
             // Thumbnail could be removed during scroll event.
             parentElem.removeChild(thumbnail);
             parentElem.removeChild(thumbnailArrow);
+            globalThis.clicked = false;
           } catch(err) {}
         }, 500);
       }
