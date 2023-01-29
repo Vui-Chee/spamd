@@ -1,3 +1,7 @@
+## 0.1.5
+
+* Fixed issue where spam clicking breaks copy code button.
+
 ## 0.1.4
 
 ### New Features
