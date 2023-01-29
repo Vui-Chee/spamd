@@ -28,7 +28,7 @@ curl -sS https://raw.githubusercontent.com/Vui-Chee/spamd/master/install.sh | sh
 
 ### Windows
 
-Download the release [package](https://github.com/Vui-Chee/spamd/releases/download/v0.1.1/spamd_windows_amd64)
+Download the release [package](https://github.com/Vui-Chee/spamd/releases/download/v0.1.5/spamd_windows_amd64.exe)
 directly.
 
 ### Using Go
