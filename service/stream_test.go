@@ -1,7 +1,6 @@
 package service
 
 import (
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -165,7 +164,7 @@ func createMockWsConn(resourceUri string, handler func(http.ResponseWriter, *htt
 }
 
 func TestCloseConnection(t *testing.T) {
-	file, _ := ioutil.TempFile(".", "*")
+	file, _ := os.CreateTemp(".", "*")
 	defer os.Remove(file.Name())
 
 	watcher := newFileWatcher(true)
@@ -197,7 +196,7 @@ func TestCloseConnection(t *testing.T) {
 }
 
 func TestGetFirstPageOnConnect(t *testing.T) {
-	file, _ := ioutil.TempFile(".", "*")
+	file, _ := os.CreateTemp(".", "*")
 	file.WriteString(`# First Page
 
 An example tranformation of markdown contents into
@@ -234,7 +233,7 @@ actual HTML.</p>
 }
 
 func TestTriggerWriteOnWatch(t *testing.T) {
-	file, _ := ioutil.TempFile(".", "*")
+	file, _ := os.CreateTemp(".", "*")
 	defer os.Remove(file.Name())
 	info, _ := file.Stat()
 	filepath := file.Name()[2:]
@@ -271,7 +270,7 @@ func TestTriggerWriteOnWatch(t *testing.T) {
 }
 
 func TestTriggerErrorOnWatch(t *testing.T) {
-	file, _ := ioutil.TempFile(".", "*")
+	file, _ := os.CreateTemp(".", "*")
 	file.WriteString("# First Page")
 	info, _ := file.Stat()
 	filepath := file.Name()[2:]

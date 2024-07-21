@@ -3,7 +3,6 @@ package testing
 import (
 	"embed"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 )
@@ -22,7 +21,7 @@ func pathIsDir(subpath string) bool {
 // Put all files/folders inside main folder.
 func SetupFS(prefix string, subpaths []string) (string, error) {
 	// Creates a temporary directory
-	testdir, err := ioutil.TempDir(".", prefix)
+	testdir, err := os.MkdirTemp(".", prefix)
 	if err != nil {
 		return "", fmt.Errorf("Failed to create test directory.")
 	}

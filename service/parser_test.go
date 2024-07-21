@@ -3,7 +3,6 @@ package service
 import (
 	"bytes"
 	"errors"
-	"io/ioutil"
 	"os"
 	"testing"
 )
@@ -27,7 +26,7 @@ func TestReturnErrorWhenConvertFails(t *testing.T) {
 	wantError := errors.New("Convert function fails.")
 
 	// Setup fake file and converter function.
-	file, _ := ioutil.TempFile(".", "*")
+	file, _ := os.CreateTemp(".", "*")
 	converterMutex.Lock()
 	savedConverter := converter
 	converter = func(filedata []byte, content *bytes.Buffer) error {
@@ -46,7 +45,7 @@ func TestReturnErrorWhenConvertFails(t *testing.T) {
 }
 
 func TestConvertIntoMarkdown(t *testing.T) {
-	file, _ := ioutil.TempFile(".", "*")
+	file, _ := os.CreateTemp(".", "*")
 	file.WriteString("# Header")
 	defer os.Remove(file.Name())
 

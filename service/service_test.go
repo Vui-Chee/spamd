@@ -1,7 +1,6 @@
 package service
 
 import (
-	"io/ioutil"
 	"os"
 	"path"
 	"strconv"
@@ -60,7 +59,7 @@ func TestValidRedirects(t *testing.T) {
 		t.Errorf("redirectIfNotMarkdown(\"%s\") should return true.", config.StylesPrefix)
 	}
 
-	file, _ := ioutil.TempFile(".", "*.md")
+	file, _ := os.CreateTemp(".", "*.md")
 	defer os.Remove(file.Name())
 
 	uri := "/" + path.Base(file.Name())
