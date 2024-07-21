@@ -5,7 +5,7 @@ import (
 	"errors"
 	"os"
 
-	"github.com/alecthomas/chroma/styles"
+	"github.com/alecthomas/chroma/v2/styles"
 )
 
 const (

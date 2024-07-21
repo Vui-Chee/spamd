@@ -13,3 +13,10 @@
 
 ## SVG
 ![This is an image](/assets/android.svg)
+
+## Image behind a WAF
+
+<a href="https://harvardartmuseums.org/collections/object/230725">
+  <!-- Github somehow converts url to correct final url -->
+  <img src="https://nrs.harvard.edu/urn-3:HUAM:756527" alt="'West Indian Girl' by Childe Hassam" width="600">
+</a>

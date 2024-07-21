@@ -2,7 +2,6 @@ package service
 
 import (
 	"embed"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"sync"
@@ -130,13 +129,13 @@ func TestServeHTML_ErrOnMissingFS(t *testing.T) {
 }
 
 func TestServeLocalImage(t *testing.T) {
-	dir, err := ioutil.TempDir(".", "")
+	dir, err := os.MkdirTemp(".", "")
 	if err != nil {
 		t.Error("Failed to create tempdir.", err)
 		t.FailNow()
 	}
 	defer os.RemoveAll(dir)
-	file, err := ioutil.TempFile(dir, "")
+	file, err := os.CreateTemp(dir, "")
 	if err != nil {
 		t.Error("Failed to create tempfile.")
 		t.FailNow()
