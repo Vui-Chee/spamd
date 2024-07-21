@@ -14,7 +14,7 @@
 ## SVG
 ![This is an image](/assets/android.svg)
 
-## Redirected Image
+## Image behind a WAF
 
 <a href="https://harvardartmuseums.org/collections/object/230725">
   <!-- Github somehow converts url to correct final url -->
