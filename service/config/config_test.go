@@ -6,7 +6,7 @@ import (
 	"path"
 	"testing"
 
-	"github.com/alecthomas/chroma/styles"
+	"github.com/alecthomas/chroma/v2/styles"
 )
 
 func TestIsChromaTheme(t *testing.T) {
