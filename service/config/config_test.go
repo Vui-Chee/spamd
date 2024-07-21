@@ -1,7 +1,6 @@
 package config
 
 import (
-	"io/ioutil"
 	"os"
 	"path"
 	"testing"
@@ -106,7 +105,7 @@ func TestSetValidCodeTheme(t *testing.T) {
 
 func TestConstructConfigFromFile(t *testing.T) {
 	home, _ := os.UserHomeDir()
-	file, _ := ioutil.TempFile(home, ".*")
+	file, _ := os.CreateTemp(home, ".*")
 	file.WriteString("{\"theme\":\"dark\",\"port\":1234,\"codeblock\":\"vim\"}")
 	defer os.Remove(file.Name())
 
@@ -126,7 +125,7 @@ func TestConstructConfigFromFile(t *testing.T) {
 
 func TestConstructConfigFromDefaults(t *testing.T) {
 	home, _ := os.UserHomeDir()
-	file, _ := ioutil.TempFile(home, ".*")
+	file, _ := os.CreateTemp(home, ".*")
 	file.WriteString("{\"port\":1234}")
 	defer os.Remove(file.Name())
 
@@ -168,7 +167,7 @@ func TestSetDefaultOnAbsentConfigFile(t *testing.T) {
 func TestErrorOnInvalidConfigFile(t *testing.T) {
 	// File exists but got invalid config
 	home, _ := os.UserHomeDir()
-	file, _ := ioutil.TempFile(home, ".*")
+	file, _ := os.CreateTemp(home, ".*")
 	// Config with trailing comma in last line
 	file.WriteString("{\"theme\":\"dark\",\"port\":1234,}")
 	defer os.Remove(file.Name())
