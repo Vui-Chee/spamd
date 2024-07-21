@@ -1,6 +1,6 @@
 module spamd
 
-go 1.17
+go 1.22
 
 require (
 	github.com/alecthomas/chroma v0.10.0
